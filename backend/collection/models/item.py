@@ -9,7 +9,7 @@ def item_image_path(instance, filename):
 
 
 class Item(BaseModel):
-    """Предмет в коллекции"""
+    """Item in Collection"""
 
     collection = models.ForeignKey(
         Collection,
@@ -34,7 +34,7 @@ class Item(BaseModel):
 
 
 class ItemImage(BaseModel):
-    """Изображения предмета"""
+    """Image from Item"""
 
     item = models.ForeignKey(
         Item,

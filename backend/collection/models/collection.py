@@ -9,7 +9,7 @@ def collection_image_path(instance, filename):
 
 
 class Collection(BaseModel):
-    """Коллекция пользователя"""
+    """User`s collection"""
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
