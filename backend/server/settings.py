@@ -12,7 +12,7 @@ SECRET_KEY = '3hls$)92@wy0z^lq67@w1a(qzx4*$)pj)_*1$m!h$k#dl(odq&'
 DEBUG = True
 
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "192.168.0.12"]
+ALLOWED_HOSTS = ["*"]
 
 
 
@@ -37,6 +37,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "core",
     "accounts",
+    "collection"
 ]  
    
 
@@ -178,9 +179,8 @@ CORS_ALLOW_CREDENTIALS = True
 # NOTE:
 # change 'https://example-prod-vue.com' to your frontend domain
 CORS_ORIGIN_WHITELIST = [
-    'http://localhost:8080',
-    'http://127.0.0.1:8080',
-    'https://example-prod-vue.com'
+    '*',
+
 ]
 
 
@@ -188,5 +188,12 @@ CORS_ORIGIN_WHITELIST = [
 SPECTACULAR_SETTINGS = {
     "TITLE": "Collectioner API",
     "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,   # чтобы сама /api/schema/ не попадала в схему
+    "SERVE_INCLUDE_SCHEMA": False,  
 }
+
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
