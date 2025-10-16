@@ -4,7 +4,8 @@ from collection.models import Collection
 from collection.serializers.collection import CollectionSerializer
 from collection.pagination import DefaultPageNumberPagination
 
-class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
+
+class CollectionViewSet(viewsets.ModelViewSet):
     """
     /api/collections/      -> all collections
     /api/collections/id/   -> collection by id
@@ -26,7 +27,7 @@ class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
     from rest_framework.decorators import action
     from rest_framework import response
 
-    @action(detail=False, methods=["get"], url_path="me")
+    @action(detail=False, methods=["get"], url_path="me", pagination_class=DefaultPageNumberPagination)
     def me(self, request):
         qs = (
             Collection.objects
@@ -40,3 +41,7 @@ class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
             return self.get_paginated_response(ser.data)
         ser = self.get_serializer(qs, many=True)
         return response.Response(ser.data)
+    
+
+   
+    

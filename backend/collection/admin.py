@@ -6,7 +6,7 @@ from .models import Collection, Item, ItemImage
 class ItemImageInline(admin.TabularInline):
     model = ItemImage
     extra = 0
-    fields = ("preview", "image", "order", "created_at", "updated_at")
+    fields = ("preview", "image", "order", "created_at", "updated_at","description")
     readonly_fields = ("preview", "created_at", "updated_at")
 
     @admin.display(description="Preview")
@@ -34,7 +34,7 @@ class CollectionAdmin(admin.ModelAdmin):
 class ItemAdmin(admin.ModelAdmin):
     list_display = (
         "name", "collection", "purchase_date", "purchase_price",
-        "current_value", "created_at",
+        "current_value", "created_at","description"
     )
     search_fields = (
         "name", "collection__name",

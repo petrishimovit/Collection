@@ -18,6 +18,8 @@ class Item(BaseModel):
     )
     name = models.CharField(max_length=250)
 
+    description = models.CharField(max_length=700)
+
     purchase_date = models.DateField(blank=True, null=True)
 
     purchase_price = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
