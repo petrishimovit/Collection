@@ -18,7 +18,7 @@ class Item(BaseModel):
     )
     name = models.CharField(max_length=250)
 
-    description = models.CharField(max_length=700)
+    description = models.CharField(max_length=700,default="No description")
 
     purchase_date = models.DateField(blank=True, null=True)
 
