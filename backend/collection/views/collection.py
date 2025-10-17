@@ -10,16 +10,16 @@ from rest_framework.exceptions import PermissionDenied
 from collection.models import Collection
 from collection.serializers.collection import CollectionSerializer
 from collection.pagination import DefaultPageNumberPagination
-from collection.permissions import IsOwnerOrReadOnly
+from collection.permissions.collection import IsOwnerOrReadOnly
 
 class CollectionViewSet(viewsets.ModelViewSet):
     """
-        GET   /api/collections/        -> all collections (read)
-        GET   /api/collections/{id}/   -> collection by id (read)
-        GET   /api/collections/me/     -> only current user's collections (read)
-        POST  /api/collections/        -> create (auth)
-        PUT   /api/collections/{id}/   -> update (owner)
-        PATCH /api/collections/{id}/   -> update (owner)
+        GET    /api/collections/        -> all collections (read)
+        GET    /api/collections/{id}/   -> collection by id (read)
+        GET    /api/collections/me/     -> only current user's collections (read)
+        POST   /api/collections/        -> create (auth)
+        PUT    /api/collections/{id}/   -> update (owner)
+        PATCH  /api/collections/{id}/   -> update (owner)
         DELETE /api/collections/{id}/  -> delete (owner)
     """
     serializer_class: Type[Serializer] = CollectionSerializer
