@@ -3,9 +3,9 @@ from collection.models import Collection
 
 
 class CollectionSerializer(serializers.ModelSerializer):
-    """Basic serializer for Collection model (without nested items)."""
+    """Serializer for Collection"""
 
-    items_count = serializers.IntegerField(read_only=True)
+    items_count = serializers.IntegerField(read_only=True) # items count for pagination
 
     class Meta:
         model = Collection
@@ -19,4 +19,4 @@ class CollectionSerializer(serializers.ModelSerializer):
             "owner",
            
         )
-        read_only_fields = ("id", "created_at", "updated_at")
+        read_only_fields = ("id", "created_at", "updated_at","owner","image")
