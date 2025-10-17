@@ -16,6 +16,7 @@ class Item(BaseModel):
         on_delete=models.CASCADE,
         related_name="items",
     )
+    
     name = models.CharField(max_length=250)
 
     description = models.CharField(max_length=700,default="No description")

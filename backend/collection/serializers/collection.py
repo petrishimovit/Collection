@@ -17,6 +17,7 @@ class CollectionSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "owner",
+            "items"
            
         )
-        read_only_fields = ("id", "created_at", "updated_at","owner","image")
+        read_only_fields = ("id", "created_at", "updated_at","owner","image","items")

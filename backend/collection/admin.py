@@ -6,7 +6,7 @@ from .models import Collection, Item, ItemImage
 class ItemImageInline(admin.TabularInline):
     model = ItemImage
     extra = 0
-    fields = ("preview", "image", "order", "created_at", "updated_at","description")
+    fields = ("preview", "image", "order", "created_at", "updated_at")
     readonly_fields = ("preview", "created_at", "updated_at")
 
     @admin.display(description="Preview")
