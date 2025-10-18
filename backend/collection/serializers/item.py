@@ -17,6 +17,10 @@ class ItemSerializer(serializers.ModelSerializer):
             "purchase_price",
             "current_value",
             "extra",
+            "items_count",
+            "images",
+            "collection",
+            
            
         )
-        read_only_fields = ("id", "created_at", "updated_at","collection")
+        read_only_fields = ("id", "created_at", "updated_at","items_count","images")

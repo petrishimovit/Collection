@@ -1,7 +1,7 @@
 from rest_framework import permissions
 from rest_framework.permissions import SAFE_METHODS
 
-class IsOwnerOrReadOnly(permissions.BasePermission):
+class IsCollectionOwnerOrReadOnly(permissions.BasePermission):
     """
     GET - AllowAny
     POST/PUT/PATCH/DELETE - Auth & owner 
