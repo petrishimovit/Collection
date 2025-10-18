@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from collection.models import Item
 from collection.serializers.item import ItemSerializer
 from collection.permissions.item import IsItemOwnerOrReadOnly
+from collection.pagination import DefaultPageNumberPagination
 
 
 class ItemViewSet(viewsets.ModelViewSet):
@@ -31,6 +32,7 @@ class ItemViewSet(viewsets.ModelViewSet):
 
     serializer_class: Type[Serializer] = ItemSerializer
     permission_classes: list[type[BasePermission]] = [IsItemOwnerOrReadOnly]
+    pagination_class = DefaultPageNumberPagination
 
     def get_queryset(self) -> QuerySet[Item]:
         """
