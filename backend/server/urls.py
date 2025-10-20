@@ -31,6 +31,7 @@ urlpatterns = [
     path('', include('core.urls')),
     path("", include("accounts.urls", namespace="accounts")),
     path("", include("collection.urls")),
+    path("", include("posts.urls")),
 ]
 
 
