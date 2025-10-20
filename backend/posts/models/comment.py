@@ -6,7 +6,7 @@ from core.models import BaseModel
 class Comment(BaseModel):
     post = models.ForeignKey("posts.Post", on_delete=models.CASCADE, related_name="comments")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments")
-    body = models.TextField()
+    body = models.TextField(max_length=200)
 
     class Meta:
         ordering = ["created_at", "id"]
