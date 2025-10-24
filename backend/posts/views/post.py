@@ -2,12 +2,13 @@ from django.db.models import Count, Q
 from rest_framework import viewsets, permissions, response, status, decorators
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
-from drf_spectacular.utils import extend_schema, OpenApiRequest
+from drf_spectacular.utils import extend_schema, OpenApiExample
 
-from posts.models import Post, Comment
+
+from posts.models import Post, Comment , PostReaction
 from posts.permissions import IsAuthorOrReadOnly
 from posts.pagination import PostPagination, CommentPagination
-from posts.serializers import PostListSerializer, PostDetailSerializer, CommentSerializer
+from posts.serializers import PostListSerializer, PostDetailSerializer, CommentSerializer , ReactionRequestSerializer
 from posts.serializers import PostCreateSerializer
 
 
@@ -153,3 +154,39 @@ class PostViewSet(viewsets.ModelViewSet):
 
             comment.delete()
             return response.Response(status=status.HTTP_204_NO_CONTENT)
+        
+
+
+
+
+    @extend_schema(
+    request=ReactionRequestSerializer,
+    )    
+    @decorators.action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def react(self, request, pk=None):
+        post = self.get_object()
+        reaction_type = request.data.get("type")
+
+        if reaction_type not in [PostReaction.LIKE, PostReaction.DISLIKE]:
+            raise ValidationError({"type": "Must be 'like' or 'dislike'."})
+
+        reaction, created = PostReaction.objects.get_or_create(
+            post=post, user=request.user, defaults={"type": reaction_type}
+        )
+
+       
+        if not created:
+            if reaction.type == reaction_type:
+               
+                reaction.delete()
+                return response.Response(
+                    {"status": "removed", "likes": post.likes_count, "dislikes": post.dislikes_count}
+                )
+            else:
+                
+                reaction.type = reaction_type
+                reaction.save()
+
+        return response.Response(
+            {"status": "added", "likes": post.likes_count, "dislikes": post.dislikes_count}
+        )

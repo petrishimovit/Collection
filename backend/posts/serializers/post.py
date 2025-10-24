@@ -40,20 +40,17 @@ class PostListSerializer(serializers.ModelSerializer):
 
 
 class PostDetailSerializer(PostListSerializer):
-    """
-    Detailed serializer for a single post.
-    Includes all basic fields and related images.
-    """
-    
     images = serializers.SerializerMethodField()
 
     class Meta(PostListSerializer.Meta):
-        fields = PostListSerializer.Meta.fields + ("images",)
+        fields = PostListSerializer.Meta.fields + (
+            "images",
+            "likes_count",
+            "dislikes_count",
+        )
+        read_only_fields = ("likes_count", "dislikes_count")
 
     def get_images(self, obj):
-        """
-        Return list of attached images with URL and size info.
-        """
         return [
             {
                 "id": img.id,
@@ -63,6 +60,7 @@ class PostDetailSerializer(PostListSerializer):
             }
             for img in obj.images.all().order_by("id")
         ]
+
 
 
 class PostCreateSerializer(serializers.ModelSerializer):
@@ -77,9 +75,9 @@ class PostCreateSerializer(serializers.ModelSerializer):
         fields = ("title", "body", "images")
 
     def validate_images(self, files):
-        # пример ограничений (можешь подправить):
+        
         MAX_FILES = 10
-        MAX_SIZE = 5 * 1024 * 1024  # 5 MB на файл
+        MAX_SIZE = 5 * 1024 * 1024  
         if len(files) > MAX_FILES:
             raise serializers.ValidationError(f"Максимум {MAX_FILES} изображений.")
         for f in files:
