@@ -6,7 +6,7 @@ from django import forms
 from .models import User
 
 
-# ---- формы, чтобы admin не искал username ----
+
 class UserCreationForm(forms.ModelForm):
     password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
     password2 = forms.CharField(label="Password confirmation", widget=forms.PasswordInput)
