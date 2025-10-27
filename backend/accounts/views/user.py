@@ -3,6 +3,7 @@ from django.db.models import Prefetch
 from accounts.models import User
 from accounts.serializers.user import UserListSerializer, UserDetailSerializer
 from accounts.serializers.profile import ProfileWriteSerializer
+from accounts.pagination import DefaultPagination
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -16,6 +17,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         Prefetch("followers"), Prefetch("following")
     )
     permission_classes = [permissions.AllowAny]
+    pagination_class = DefaultPagination
 
     def get_serializer_class(self):
         return UserDetailSerializer if self.action == "retrieve" else UserListSerializer

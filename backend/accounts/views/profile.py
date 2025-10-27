@@ -6,6 +6,7 @@ from accounts.serializers.profile import (
     ProfileWriteSerializer,
 )
 from accounts.permissions import IsProfileOwner
+from accounts.pagination import DefaultPagination
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
@@ -17,7 +18,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
     """
     queryset = Profile.objects.select_related("user")
     http_method_names = ["get", "patch", "head", "options"]
-
+    pagination_class = DefaultPagination
+    
     def get_permissions(self):
         if self.action in ("list", "retrieve"):
             return [permissions.AllowAny()]
