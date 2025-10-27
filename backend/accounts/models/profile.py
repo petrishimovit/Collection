@@ -8,6 +8,7 @@ class Profile(BaseModel):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="profile",
+        
     )
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
     bio = models.TextField(blank=True, default="", max_length=400)

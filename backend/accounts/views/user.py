@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, decorators, response, status
 from django.db.models import Prefetch
 from accounts.models import User
 from accounts.serializers.user import UserListSerializer, UserDetailSerializer
-from accounts.serializers.profile import ProfileWriteSerializer
+from accounts.serializers.profile import ProfileWriteSerializer , ProfileDetailSerializer
 from accounts.pagination import DefaultPagination
 
 
@@ -71,3 +71,29 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
        
         out = UserDetailSerializer(request.user, context={"request": request})
         return response.Response(out.data, status=status.HTTP_200_OK)
+    
+    @decorators.action(
+        detail=True,
+        methods=["patch"],                      
+        url_path="profile",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def update_profile(self, request, pk=None):
+        user = self.get_object()               
+
+        if not (request.user.is_staff or request.user.id == user.id):
+            raise PermissionDenied("Можно редактировать только свой профиль.")
+
+        serializer = ProfileWriteSerializer(
+            user.profile,
+            data=request.data,
+            partial=True,                      
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        out = ProfileDetailSerializer(user.profile, context={"request": request})
+        return response.Response(out.data, status=status.HTTP_200_OK)
+    
+    

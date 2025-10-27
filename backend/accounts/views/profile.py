@@ -30,4 +30,4 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return ProfileBaseSerializer
         if self.action == "retrieve":
             return ProfileDetailSerializer
-        return ProfileWriteSerializer  # for PATCH
+        return ProfileWriteSerializer 
