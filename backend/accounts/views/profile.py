@@ -10,10 +10,10 @@ from accounts.permissions import IsProfileOwner
 
 class ProfileViewSet(viewsets.ModelViewSet):
     """
-    /profiles/          -> list (public, lightweight)
-    /profiles/{id}/     -> retrieve (public, detailed)
-    /profiles/{id}/PATCH -> update (owner only)
-    Create/Destroy disabled (profiles are created via signal).
+    - /profiles/          -> list (public, lightweight)
+    - /profiles/{id}/     -> retrieve (public, detailed)
+    - /profiles/{id}/PATCH -> update (owner only)
+    - Create/Destroy disabled (profiles are created via signal).
     """
     queryset = Profile.objects.select_related("user")
     http_method_names = ["get", "patch", "head", "options"]

@@ -7,10 +7,10 @@ from accounts.serializers.profile import ProfileWriteSerializer
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    /users/           -> list (public)
-    /users/{id}/      -> retrieve (public)
-    /users/{id}/follow (POST/DELETE) -> follow/unfollow (auth)
-    /users/me (GET/PATCH) -> current user (auth), PATCH updates profile via ProfileWriteSerializer
+    - /users/           -> list (public)
+    - /users/{id}/      -> retrieve (public)
+    - /users/{id}/follow (POST/DELETE) -> follow/unfollow (auth)
+    - /users/me (GET/PATCH) -> current user (auth), 
     """
     queryset = User.objects.select_related("profile").prefetch_related(
         Prefetch("followers"), Prefetch("following")
@@ -37,7 +37,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
                 {"status": "followed" if created else "already_following"},
                 status=status.HTTP_200_OK,
             )
-        # DELETE
+     
         deleted = request.user.unfollow(target)
         return response.Response(
             {"status": "unfollowed" if deleted else "not_following"},
@@ -66,6 +66,6 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         )
         ser.is_valid(raise_exception=True)
         ser.save()
-        # return fresh full detail
+       
         out = UserDetailSerializer(request.user, context={"request": request})
         return response.Response(out.data, status=status.HTTP_200_OK)
