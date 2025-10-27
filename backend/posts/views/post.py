@@ -19,7 +19,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthorOrReadOnly]
     pagination_class = PostPagination
-    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    parser_classes=[MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         """Base queryset with reaction and comment counters."""
