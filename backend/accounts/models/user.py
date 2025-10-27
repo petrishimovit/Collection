@@ -10,6 +10,11 @@ class User(BaseModel, AbstractUser):
     email = models.EmailField("Email", unique=True)
     display_name = models.CharField("Display name", max_length=150)
 
+    is_active = models.BooleanField(
+        "Is active",
+        default=True,
+    )
+
     following = models.ManyToManyField(
         "self",
         through="accounts.Follow",
@@ -26,10 +31,16 @@ class User(BaseModel, AbstractUser):
 
     def __str__(self):
         return self.display_name or self.email
+    
+
+    def deactivate(self):
+    
+        self.is_active = False
+        self.save(update_fields=["is_active"])
 
     
     def follow(self, other: "User") -> bool:
-        """Follow another user. Returns True if a new relation was created."""
+        
         if other.id == self.id:
             raise ValidationError("Cannot follow yourself.")
         from .follow import Follow 
@@ -37,12 +48,12 @@ class User(BaseModel, AbstractUser):
         return created
 
     def unfollow(self, other: "User") -> int:
-        """Unfollow another user. Returns number of deleted relations."""
+     
         from .follow import Follow
         return Follow.objects.filter(follower=self, following=other).delete()[0]
 
     def is_following(self, other: "User") -> bool:
-        """Check if this user follows another user."""
+        
         from .follow import Follow
         return Follow.objects.filter(follower=self, following=other).exists()
 
