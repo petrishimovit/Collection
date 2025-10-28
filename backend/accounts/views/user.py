@@ -38,6 +38,8 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     - GET    /users/me/                 -> minimal self info (id, display_name, mini)
     - GET    /users/me/following/       -> my following (only active), paginated
     - DELETE /users/me/                 -> soft-delete self (is_active=False)
+    - GET    /users/{id}/followers/       -> list followers (only active), paginated
+    - GET    /users/me/followers/         -> my followers (only active), paginated
     """
 
     permission_classes = [permissions.AllowAny]
@@ -156,6 +158,27 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         ser = UserListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
     
-    
+    @decorators.action(
+    detail=True,
+    methods=["get"],
+    url_path="followers",
+    permission_classes=[permissions.AllowAny],
+)
+    def followers(self, request: Request, pk: str | None = None):
+        user = self.get_object()
+        page = self.paginate_queryset(followers_qs(user))
+        ser = UserListSerializer(page, many=True, context={"request": request})
+        return self.get_paginated_response(ser.data)
+
+    @decorators.action(
+        detail=False,
+        methods=["get"],
+        url_path="me/followers",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def my_followers(self, request: Request):
+        page = self.paginate_queryset(followers_qs(request.user))
+        ser = UserListSerializer(page, many=True, context={"request": request})
+        return self.get_paginated_response(ser.data)
 
 
