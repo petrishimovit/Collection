@@ -3,7 +3,7 @@ from typing import Any, Dict
 from django.http import Http404
 from django.contrib.auth import get_user_model
 
-from rest_framework import viewsets, permissions, decorators, response, status
+from rest_framework import viewsets, permissions, decorators, response, status , mixins
 from rest_framework.request import Request
 
 from accounts.pagination import DefaultPagination
@@ -133,11 +133,15 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
     @decorators.action(
         detail=False,
-        methods=["get"],
+        methods=["get", "delete"],
         url_path="me",
         permission_classes=[permissions.IsAuthenticated],
     )
     def me(self, request: Request):
+        if request.method == "DELETE":
+            UserService.deactivate_self(user=request.user)
+            return response.Response({"status": "deactivated"}, status=status.HTTP_204_NO_CONTENT)
+
         ser = MeMinimalSerializer(request.user, context={"request": request})
         return response.Response(ser.data, status=status.HTTP_200_OK)
 
@@ -152,12 +156,4 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         ser = UserListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
 
-    @decorators.action(
-        detail=False,
-        methods=["delete"],
-        url_path="me",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def delete_me(self, request: Request):
-        UserService.deactivate_self(user=request.user)
-        return response.Response({"status": "deactivated"}, status=status.HTTP_204_NO_CONTENT)
+
