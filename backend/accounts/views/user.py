@@ -8,7 +8,7 @@ from rest_framework.request import Request
 
 from accounts.pagination import DefaultPagination
 from accounts.permissions import IsSelfOrStaff
-from accounts.selectors.user import user_list_qs, following_qs
+from accounts.selectors.user import user_list_qs, following_qs , followers_qs
 from accounts.serializers.user import (
     UserListSerializer,
     UserDetailSerializer,
@@ -155,5 +155,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         page = self.paginate_queryset(following_qs(request.user))
         ser = UserListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
+    
+    
 
 

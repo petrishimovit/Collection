@@ -1,4 +1,4 @@
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Max
 from rest_framework import viewsets, permissions, response, status, decorators
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
@@ -12,17 +12,17 @@ from posts.serializers import (
     ReactionRequestSerializer, PostCreateSerializer
 )
 from posts.services.post import PostService
+from posts.selectors import following_qs
 
 
 class PostViewSet(viewsets.ModelViewSet):
-    """CRUD for posts with comments and reactions."""
+
 
     permission_classes = [IsAuthorOrReadOnly]
     pagination_class = PostPagination
     parser_classes=[MultiPartParser, FormParser, JSONParser]
 
-    def get_queryset(self):
-        """Base queryset with reaction and comment counters."""
+    def _base_qs(self):
         return (
             Post.objects
             .select_related("author")
@@ -31,8 +31,12 @@ class PostViewSet(viewsets.ModelViewSet):
                 _dislikes_count=Count("reactions", filter=Q(reactions__type=PostReaction.DISLIKE)),
                 _comments_count=Count("comments"),
             )
-            .order_by("-created_at", "-id")
         )
+
+    def get_queryset(self):
+        return self._base_qs().order_by("-created_at", "-id")
+    
+    
 
     def get_serializer_class(self):
         """Pick serializer by action."""
@@ -142,3 +146,42 @@ class PostViewSet(viewsets.ModelViewSet):
         reaction_type = request.data.get("type")
         data = PostService.toggle_reaction(post=post, user=request.user, reaction_type=reaction_type)
         return response.Response(data, status=status.HTTP_200_OK)
+    
+   
+    @decorators.action(
+        detail=False,
+        methods=["get"],
+        url_path="me/liked",
+        permission_classes=[permissions.IsAuthenticated],
+        pagination_class=PostPagination,
+    )
+    def liked_by_me(self, request):
+       
+        qs = self._base_qs().filter(
+            reactions__user=request.user,
+            reactions__type=PostReaction.LIKE,
+        ).annotate(
+            reacted_at=Max("reactions__created_at", filter=Q(reactions__user=request.user,
+                                                             reactions__type=PostReaction.LIKE))
+        ).order_by("-reacted_at", "-created_at", "-id").distinct()
+
+        page = self.paginate_queryset(qs)
+        ser = PostListSerializer(page, many=True, context={"request": request})
+        return self.get_paginated_response(ser.data)
+
+
+    @decorators.action(
+        detail=False,
+        methods=["get"],
+        url_path="feed",
+        permission_classes=[permissions.IsAuthenticated],
+        pagination_class=PostPagination,
+    )
+    def feed(self, request):
+       
+        followed_users = following_qs(request.user).values("id")  
+        qs = self._base_qs().filter(author_id__in=followed_users).order_by("-created_at", "-id")
+
+        page = self.paginate_queryset(qs)
+        ser = PostListSerializer(page, many=True, context={"request": request})
+        return self.get_paginated_response(ser.data)

@@ -15,3 +15,7 @@ def user_by_pk(pk: int):
 def following_qs(user: User):
    
     return user.following.select_related("profile")
+
+def followers_qs(user):
+    
+    return User.objects.filter(is_active=True, following__id=user.id)

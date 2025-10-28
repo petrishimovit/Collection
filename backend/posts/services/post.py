@@ -7,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from posts.models import Post, Comment, PostReaction
 
+
 ReactionLiteral = Literal["like", "dislike"]
 
 
