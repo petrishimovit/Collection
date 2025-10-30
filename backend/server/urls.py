@@ -32,6 +32,8 @@ urlpatterns = [
     path("", include("accounts.urls", namespace="accounts")),
     path("", include("collection.urls")),
     path("", include("posts.urls")),
+    path("games/", include("games.urls")),
+
 ]
 
 
