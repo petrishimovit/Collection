@@ -1,15 +1,17 @@
 from __future__ import annotations
+
 from pathlib import Path
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import permissions, status
+
+from rest_framework import views, response, permissions, status, serializers
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 from .serializers import GameItemSerializer
 from .services.search import GameSearchService
+from .integrations.pricecharting import PricechartingClient, Region
 
-class GameSearchView(APIView):
+
+class GameSearchView(views.APIView):
     permission_classes = [permissions.AllowAny]
     DB_PATH = Path(__file__).resolve().parent / "gamesdb"
     service = GameSearchService()
@@ -40,7 +42,10 @@ class GameSearchView(APIView):
             offset = 0
 
         if not q.strip():
-            return Response({"detail": "Please provide query parameter ?q="}, status=status.HTTP_400_BAD_REQUEST)
+            return response.Response(
+                {"detail": "Please provide query parameter ?q="},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         data = self.service.search_by_name(
             q=q,
@@ -52,5 +57,66 @@ class GameSearchView(APIView):
 
         items = data["items"]
         if single:
-            return Response(items[0] if items else {}, status=status.HTTP_200_OK)
-        return Response(items, status=status.HTTP_200_OK)
+            return response.Response(items[0] if items else {}, status=status.HTTP_200_OK)
+        return response.Response(items, status=status.HTTP_200_OK)
+
+
+class SearchQuerySerializer(serializers.Serializer):
+    q = serializers.CharField(max_length=200)
+    region = serializers.ChoiceField(
+        choices=["all", "japan", "ntsc", "pal"],
+        required=False,
+        default="all",
+    )
+    limit = serializers.IntegerField(required=False, min_value=1, max_value=50, default=10)
+
+
+class ItemQuerySerializer(serializers.Serializer):
+    url = serializers.URLField(required=False)
+    slug = serializers.CharField(required=False)
+
+    def validate(self, data):
+        if not data.get("url") and not data.get("slug"):
+            raise serializers.ValidationError("Provide `url` or `slug`.")
+        return data
+
+
+@extend_schema(
+    summary="Search PriceCharting",
+    parameters=[
+        OpenApiParameter("q", str, OpenApiParameter.QUERY, required=True),
+        OpenApiParameter("region", str, OpenApiParameter.QUERY, description="all | japan | ntsc | pal"),
+        OpenApiParameter("limit", int, OpenApiParameter.QUERY, description="1..50"),
+    ],
+    tags=["PriceCharting"],
+)
+class PricechartingSearchView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        params = SearchQuerySerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        q = params.validated_data["q"]
+        region: Region = params.validated_data["region"]
+        limit = params.validated_data["limit"]
+        items = PricechartingClient.search(q=q, region=region, limit=limit)
+        return response.Response([i.__dict__ for i in items])
+
+
+@extend_schema(
+    summary="Get PriceCharting item details",
+    parameters=[
+        OpenApiParameter("url", str, OpenApiParameter.QUERY),
+        OpenApiParameter("slug", str, OpenApiParameter.QUERY),
+    ],
+    tags=["PriceCharting"],
+)
+class PricechartingItemView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        params = ItemQuerySerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        token = params.validated_data.get("url") or params.validated_data.get("slug")
+        data = PricechartingClient.item_details(token)
+        return response.Response(data)
