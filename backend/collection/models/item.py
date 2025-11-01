@@ -11,6 +11,13 @@ def item_image_path(instance, filename):
 class Item(BaseModel):
     """Item in Collection"""
 
+    pricecharting = models.ForeignKey(
+        "games.PricechartingIntegration",
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="items",
+    )
+
     collection = models.ForeignKey(
         Collection,
         on_delete=models.CASCADE,

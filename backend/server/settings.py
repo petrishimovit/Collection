@@ -38,7 +38,8 @@ LOCAL_APPS = [
     "core",
     "accounts",
     "collection",
-    "posts"
+    "posts",
+    "games"
 ]  
    
 

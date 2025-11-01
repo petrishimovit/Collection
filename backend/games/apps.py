@@ -2,7 +2,7 @@ from __future__ import annotations
 from django.apps import AppConfig
 from django.conf import settings
 from pathlib import Path
-from services.registry import REGISTRY
+from .services.registry import REGISTRY
 
 class GamesConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
