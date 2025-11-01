@@ -12,10 +12,10 @@ class Item(BaseModel):
     """Item in Collection"""
 
     pricecharting = models.ForeignKey(
-        "games.PricechartingIntegration",
-        null=True, blank=True,
-        on_delete=models.SET_NULL,
-        related_name="items",
+    "games.PriceChartingConnect",
+    null=True, blank=True,
+    on_delete=models.SET_NULL,
+    related_name="items",
     )
 
     collection = models.ForeignKey(

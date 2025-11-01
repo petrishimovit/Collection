@@ -2,11 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rest_framework import views, response, permissions, status, serializers
+from rest_framework import views, response, permissions, status, serializers , viewsets ,decorators
+
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+from django.db.models import Count
 
-from .serializers import GameItemSerializer , SearchQuerySerializer , ItemQuerySerializer
+
+from collection.models import Item
+from .models import PriceChartingConnect
+
+from .serializers import GameItemSerializer , SearchQuerySerializer , ItemQuerySerializer , PriceChartingConnectSerializer , UnbindSerializer , BindSerializer
 from .services.search import GameSearchService
 from .services.pricecharting import PricechartingService 
 
@@ -103,3 +109,43 @@ class PricechartingItemView(views.APIView):
         slug = params.validated_data.get("slug")
         data = PricechartingService.get_item_details(url=url, slug=slug)
         return response.Response(data)
+    
+class PriceChartingConnectViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    GET /games/integrations/pricecharting/ -> get all integrations
+    GET /games/integrations/pricecharting/{id}/ -> get by id
+    POST /integrations/pricecharting/bind/   -> {item_id, url} (auth required)
+    POST /integrations/pricecharting/unbind/ -> {item_id}     (auth required)
+    """
+    permission_classes = [permissions.AllowAny]
+    serializer_class = PriceChartingConnectSerializer
+    queryset = PricechartingService.public_qs()  #
+
+    @decorators.action(
+        methods=["post"], detail=False, url_path="bind",
+        permission_classes=[permissions.IsAuthenticated],
+        serializer_class=BindSerializer,
+    )
+    def bind(self, request):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()  
+        obj = (
+            PriceChartingConnect.objects
+            .filter(id=obj.id)
+            .annotate(items_count=Count("items"))
+            .first()
+        )
+        data = PriceChartingConnectSerializer(obj, context=self.get_serializer_context()).data
+        return response.Response(data, status=status.HTTP_200_OK)
+
+    @decorators.action(
+        methods=["post"], detail=False, url_path="unbind",
+        permission_classes=[permissions.IsAuthenticated],
+        serializer_class=UnbindSerializer,
+    )
+    def unbind(self, request):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        ser.save()
+        return response.Response({"status": "ok"}, status=status.HTTP_200_OK)
