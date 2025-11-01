@@ -6,9 +6,9 @@ from rest_framework import views, response, permissions, status, serializers
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
-from .serializers import GameItemSerializer
+from .serializers import GameItemSerializer , SearchQuerySerializer , ItemQuerySerializer
 from .services.search import GameSearchService
-from .integrations.pricecharting import PricechartingClient, Region
+from .services.pricecharting import PricechartingService 
 
 
 class GameSearchView(views.APIView):
@@ -61,24 +61,6 @@ class GameSearchView(views.APIView):
         return response.Response(items, status=status.HTTP_200_OK)
 
 
-class SearchQuerySerializer(serializers.Serializer):
-    q = serializers.CharField(max_length=200)
-    region = serializers.ChoiceField(
-        choices=["all", "japan", "ntsc", "pal"],
-        required=False,
-        default="all",
-    )
-    limit = serializers.IntegerField(required=False, min_value=1, max_value=50, default=10)
-
-
-class ItemQuerySerializer(serializers.Serializer):
-    url = serializers.URLField(required=False)
-    slug = serializers.CharField(required=False)
-
-    def validate(self, data):
-        if not data.get("url") and not data.get("slug"):
-            raise serializers.ValidationError("Provide `url` or `slug`.")
-        return data
 
 
 @extend_schema(
@@ -97,10 +79,10 @@ class PricechartingSearchView(views.APIView):
         params = SearchQuerySerializer(data=request.query_params)
         params.is_valid(raise_exception=True)
         q = params.validated_data["q"]
-        region: Region = params.validated_data["region"]
+        region = params.validated_data["region"]
         limit = params.validated_data["limit"]
-        items = PricechartingClient.search(q=q, region=region, limit=limit)
-        return response.Response([i.__dict__ for i in items])
+        items = PricechartingService.search_items(q=q, region=region, limit=limit)
+        return response.Response(items)
 
 
 @extend_schema(
@@ -117,6 +99,7 @@ class PricechartingItemView(views.APIView):
     def get(self, request):
         params = ItemQuerySerializer(data=request.query_params)
         params.is_valid(raise_exception=True)
-        token = params.validated_data.get("url") or params.validated_data.get("slug")
-        data = PricechartingClient.item_details(token)
+        url = params.validated_data.get("url")
+        slug = params.validated_data.get("slug")
+        data = PricechartingService.get_item_details(url=url, slug=slug)
         return response.Response(data)
