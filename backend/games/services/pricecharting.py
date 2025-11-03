@@ -5,6 +5,7 @@ from typing import List, Optional
 from dataclasses import asdict
 from django.db import transaction
 from django.db.models import Count
+from django.utils import timezone
 
 from ..integrations.pricecharting.client import PricechartingClient
 from ..integrations.pricecharting.schemas import SearchItem
@@ -89,3 +90,52 @@ class PricechartingService:
             .order_by("-created_at")
             .distinct()
         )
+    
+
+    @classmethod
+    @transaction.atomic
+    def snapshot_prices(cls, *, connect: PriceChartingConnect, token: Optional[str] = None) -> dict:
+        
+        token = token or connect.url or (connect.current or {}).get("slug") or ""
+        if not token:
+            return {}
+
+        data = PricechartingClient.item_details(token)
+        prices = data.get("prices") or {}
+        now = timezone.now()
+        date_key = now.date().isoformat()  # "YYYY-MM-DD"
+
+        
+        connect.current = {
+            "title": data.get("title", ""),
+            "platform": data.get("platform", ""),
+            "region": data.get("region", "all"),
+            "url": data.get("url", ""),
+            "slug": data.get("slug", ""),
+            "prices": prices,
+        }
+        connect.last_synced_at = now
+
+        
+        hist = connect.history or {}
+        if isinstance(hist, list):
+            
+            migrated = {}
+            for i, entry in enumerate(hist, start=1):
+                if isinstance(entry, dict):
+                 
+                    at = entry.get("at") or entry.get("date")
+                    p = entry.get("prices") or {}
+                    key = (at[:10] if isinstance(at, str) and len(at) >= 10 else f"_old_{i}")
+                    migrated[key] = p
+                else:
+                    migrated[f"_old_{i}"] = entry
+            hist = migrated
+
+        
+        hist[date_key] = prices
+
+        connect.history = hist
+        connect.save(update_fields=["current", "history", "last_synced_at", "updated_at"])
+
+        return {"date": date_key, "prices": prices}

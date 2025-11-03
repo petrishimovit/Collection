@@ -18,7 +18,7 @@ class PriceChartingConnect(BaseModel):
 
     url = models.URLField(unique=True)
     current = models.JSONField(default=dict, blank=True, encoder=DjangoJSONEncoder)
-    history = models.JSONField(default=list, blank=True, encoder=DjangoJSONEncoder)
+    history = models.JSONField(default=dict, blank=True, encoder=DjangoJSONEncoder)
     last_synced_at = models.DateTimeField(null=True, blank=True)
 
     class Meta(BaseModel.Meta):
