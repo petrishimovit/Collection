@@ -30,7 +30,8 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
-    "drf_spectacular_sidecar",   
+    "drf_spectacular_sidecar",
+    "django_celery_beat",   
 ]
 
 
