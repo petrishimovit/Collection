@@ -162,7 +162,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "Europe/Saratov"
 
 USE_I18N = True
 
@@ -203,3 +203,26 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 
 PRICECHARTING_URL = "https://www.pricecharting.com"
+
+
+# ---- Celery ----
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/1"
+
+
+CELERY_TIMEZONE = TIME_ZONE    
+CELERY_ENABLE_UTC = True             
+
+
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+
+DJANGO_CELERY_BEAT_TZ_AWARE = True
+
+
+CELERY_TASK_DEFAULT_QUEUE = "celery"
+
+
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"

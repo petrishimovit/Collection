@@ -1,6 +1,7 @@
 version: "3.9"
 
 services:
+  
   redis:
     image: redis:7-alpine
     container_name: collection_redis
@@ -14,6 +15,40 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+
+  # ---- Celery Worker ----
+  celery-worker:
+    build: .
+    container_name: collection_worker
+    command: celery -A server worker -l INFO -Q celery
+    volumes:
+      - .:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - DJANGO_SETTINGS_MODULE=server.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - TZ=Europe/Saratov
+
+  # ---- Celery Beat ----
+  celery-beat:
+    build: .
+    container_name: collection_beat
+    command: celery -A server beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+      celery-worker:
+        condition: service_started
+    environment:
+      - DJANGO_SETTINGS_MODULE=server.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - TZ=Europe/Saratov
 
 volumes:
   redis-data:
