@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+  collection-postgres:
+    image: postgres:15-alpine
+    container_name: collection_postgres
+    env_file: .env
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  collection-redis:
+    image: redis:7-alpine
+    container_name: collection_redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  collection-web:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: collection_web
+    working_dir: /app
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    env_file: .env
+    depends_on:
+      collection-postgres:
+        condition: service_healthy
+      collection-redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+
+  collection-celery-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: collection_worker
+    working_dir: /app
+    command: celery -A server worker -l INFO -Q celery
+    env_file: .env
+    depends_on:
+      collection-redis:
+        condition: service_healthy
+      collection-postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
+  collection-celery-beat:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: collection_beat
+    working_dir: /app
+    command: celery -A server beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file: .env
+    depends_on:
+      collection-redis:
+        condition: service_healthy
+      collection-postgres:
+        condition: service_healthy
+      collection-celery-worker:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+
+volumes:
+  pg-data:
+  redis-data:

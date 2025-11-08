@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+.mypy_cache/
+.pytest_cache/
+.git
+.gitignore
+.vscode/
+.idea/
+dist/
+build/
+node_modules/
+media/
+staticfiles/
