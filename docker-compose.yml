@@ -1,8 +1,21 @@
 version: "3.9"
 
 services:
-  
-  redis:
+  collection-postgres:
+    image: postgres:15-alpine
+    container_name: collection_postgres
+    env_file: .env
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  collection-redis:
     image: redis:7-alpine
     container_name: collection_redis
     command: ["redis-server", "--appendonly", "yes"]
@@ -16,39 +29,58 @@ services:
       timeout: 3s
       retries: 20
 
-  # ---- Celery Worker ----
-  celery-worker:
-    build: .
-    container_name: collection_worker
-    command: celery -A server worker -l INFO -Q celery
-    volumes:
-      - .:/app
+  collection-web:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: collection_web
+    working_dir: /app
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    env_file: .env
     depends_on:
-      redis:
+      collection-postgres:
         condition: service_healthy
-    environment:
-      - DJANGO_SETTINGS_MODULE=server.settings
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
-      - TZ=Europe/Saratov
+      collection-redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
 
-  # ---- Celery Beat ----
-  celery-beat:
-    build: .
-    container_name: collection_beat
-    command: celery -A server beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    volumes:
-      - .:/app
+  collection-celery-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: collection_worker
+    working_dir: /app
+    command: celery -A server worker -l INFO -Q celery
+    env_file: .env
     depends_on:
-      redis:
+      collection-redis:
         condition: service_healthy
-      celery-worker:
+      collection-postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
+  collection-celery-beat:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: collection_beat
+    working_dir: /app
+    command: celery -A server beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file: .env
+    depends_on:
+      collection-redis:
+        condition: service_healthy
+      collection-postgres:
+        condition: service_healthy
+      collection-celery-worker:
         condition: service_started
-    environment:
-      - DJANGO_SETTINGS_MODULE=server.settings
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
-      - TZ=Europe/Saratov
+    volumes:
+      - ./backend:/app
 
 volumes:
+  pg-data:
   redis-data:
