@@ -1,41 +1,17 @@
-"""server URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/3.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-from django.contrib import admin
 from django.urls import path, include
-from django.conf import settings
-from django.conf.urls.static import static
-from drf_spectacular.views import (
-    SpectacularAPIView,
-    SpectacularSwaggerView,
-    SpectacularRedocView,
-)
+from . import views
+
+
+from rest_framework import routers
+router = routers.DefaultRouter()
+router.register('ping', views.PingViewSet, basename="ping")
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path("schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
-    path('', include('core.urls')),
-    path("", include("accounts.urls", namespace="accounts")),
-    path("", include("collection.urls")),
-    path("", include("posts.urls")),
-    path("games/", include("games.urls")),
-
+    path('api/', include(router.urls))
 ]
 
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+"""
+- For the first view, you send the refresh token to get a new access token.
+- For the second view, you send the client credentials (username and password)
+  to get BOTH a new access and refresh token.
+"""
