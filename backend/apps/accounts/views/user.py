@@ -1,62 +1,75 @@
 from typing import Any, Dict
-
 from django.http import Http404
 from django.contrib.auth import get_user_model
-
-from rest_framework import viewsets, permissions, decorators, response, status , mixins
+from rest_framework import viewsets, permissions, decorators, response, status
 from rest_framework.request import Request
+from drf_spectacular.utils import (
+    extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiParameter
+)
 
+from apps.accounts.schemas import FollowActionOut, ProfileOut, ProfileUpdateIn
 from apps.accounts.pagination import DefaultPagination
 from apps.accounts.permissions import IsSelfOrStaff
-from apps.accounts.selectors.user import user_list_qs, following_qs , followers_qs
+from apps.accounts.selectors.user import user_list_qs, following_qs, followers_qs
 from apps.accounts.serializers.user import (
-    UserListSerializer,
-    UserDetailSerializer,
-    MeMinimalSerializer,
+    UserListSerializer, UserDetailSerializer, MeMinimalSerializer,
 )
-from apps.accounts.serializers.profile import (
-    ProfileBaseSerializer,
-    ProfileWriteSerializer,
-)
+from apps.accounts.serializers.profile import ProfileBaseSerializer, ProfileWriteSerializer
 from apps.accounts.services.user import UserService
-
 
 User = get_user_model()
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Users"],
+        summary="List users",
+        description="Retrieve a paginated list of active users with minimal profile info.",
+        responses=UserListSerializer,
+    ),
+    retrieve=extend_schema(
+        tags=["Users"],
+        summary="Get user",
+        description="Retrieve detailed information about a specific user (excluding email).",
+        responses=UserDetailSerializer,
+        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True, type=int)],
+    ),
+)
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Users API (only active users are visible):
-
-    - GET    /users/                    -> list (mini profile)
-    - GET    /users/{id}/               -> detail (no email)
-    - POST   /users/{id}/follow/        -> toggle follow/unfollow
-    - GET    /users/{id}/profile/       -> {"display_name", "profile": mini}
-    - PATCH  /users/{id}/profile/       -> update own display_name + profile
-    - PUT    /users/{id}/profile/       -> replace own display_name + profile
-    - GET    /users/{id}/following/     -> list following (only active), paginated
-    - GET    /users/me/                 -> minimal self info (id, display_name, mini)
-    - GET    /users/me/following/       -> my following (only active), paginated
-    - DELETE /users/me/                 -> soft-delete self (is_active=False)
-    - GET    /users/{id}/followers/       -> list followers (only active), paginated
-    - GET    /users/me/followers/         -> my followers (only active), paginated
-    """
-
+    """Users ViewSet Followers Logic Include"""
     permission_classes = [permissions.AllowAny]
     pagination_class = DefaultPagination
 
     def get_queryset(self):
-        return user_list_qs()  # only active users
+        """Return queryset of active users."""
+        return user_list_qs()
 
     def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
         return UserDetailSerializer if self.action == "retrieve" else UserListSerializer
 
     def get_object(self):
+        """Retrieve a user instance, ensuring it is active."""
         obj = super().get_object()
         if not obj.is_active:
             raise Http404
         return obj
 
+    @extend_schema(
+        tags=["Users"],
+        summary="Follow or unfollow user",
+        description="Toggle the follow status for the target user. Returns the action result.",
+        responses={
+            200: OpenApiResponse(FollowActionOut),
+            400: OpenApiResponse(description="Cannot follow yourself / Bad request"),
+            401: OpenApiResponse(description="Authentication required"),
+            404: OpenApiResponse(description="User not found"),
+        },
+        examples=[
+            OpenApiExample("Followed", value={"status": "followed"}),
+            OpenApiExample("Unfollowed", value={"status": "unfollowed"}),
+        ],
+    )
     @decorators.action(
         detail=True,
         methods=["post"],
@@ -64,6 +77,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
     )
     def follow(self, request: Request, pk: str | None = None):
+        """Toggle following another user."""
         target = self.get_object()
         try:
             res = UserService.toggle_follow(actor=request.user, target=target)
@@ -73,6 +87,34 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
             return response.Response({"detail": "Bad request."}, status=400)
         return response.Response({"status": res.status}, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["Users"],
+        summary="Get or update user profile",
+        description=(
+            "GET: Retrieve user's display name and basic profile info.\n"
+            "PATCH/PUT: Update user's display name and profile fields."
+        ),
+        request=ProfileUpdateIn,
+        responses={
+            200: OpenApiResponse(ProfileOut),
+            400: OpenApiResponse(description="Validation error"),
+            401: OpenApiResponse(description="Authentication required"),
+            403: OpenApiResponse(description="Not allowed"),
+            404: OpenApiResponse(description="User not found"),
+        },
+        examples=[
+            OpenApiExample(
+                "Profile GET response",
+                value={"display_name": "Petr", "profile": {"avatar": None, "bio": "Hi!", "collection_focus": "Cards"}},
+                response_only=True,
+            ),
+            OpenApiExample(
+                "Profile PATCH body",
+                value={"display_name": "New Petr", "profile": {"bio": "Updated", "website": "https://example.com"}},
+                request_only=True,
+            ),
+        ],
+    )
     @decorators.action(
         detail=True,
         methods=["get", "patch", "put"],
@@ -80,6 +122,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         permission_classes=[permissions.AllowAny],
     )
     def profile(self, request: Request, pk: str | None = None):
+        """Get or update a user's profile."""
         user = self.get_object()
 
         if request.method == "GET":
@@ -89,7 +132,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
             }
             return response.Response(payload, status=status.HTTP_200_OK)
 
-        self.check_object_permissions(request, user)  # IsSelfOrStaff via get_permissions()
+        self.check_object_permissions(request, user)
 
         raw: Dict[str, Any] = request.data if isinstance(request.data, dict) else {}
         display_name = raw.get("display_name", None)
@@ -117,68 +160,78 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         return response.Response(out, status=status.HTTP_200_OK)
 
     def get_permissions(self):
+        """Apply `IsSelfOrStaff` permission for profile update actions."""
         if self.action == "profile" and getattr(self.request, "method", "") in ("PATCH", "PUT"):
             return [IsSelfOrStaff()]
         return super().get_permissions()
 
-    @decorators.action(
-        detail=True,
-        methods=["get"],
-        url_path="following",
-        permission_classes=[permissions.AllowAny],
+    @extend_schema(
+        tags=["Users"],
+        summary="List user's following",
+        description="Retrieve paginated list of users the given user follows.",
+        responses=UserListSerializer,
+        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True, type=int)],
     )
+    @decorators.action(detail=True, methods=["get"], url_path="following", permission_classes=[permissions.AllowAny])
     def following(self, request: Request, pk: str | None = None):
+        """Return list of users this user follows."""
         user = self.get_object()
         page = self.paginate_queryset(following_qs(user))
         ser = UserListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
 
-    @decorators.action(
-        detail=False,
-        methods=["get", "delete"],
-        url_path="me",
-        permission_classes=[permissions.IsAuthenticated],
+    @extend_schema(
+        tags=["Users"],
+        summary="Authenticated user info / Deactivate self",
+        description="GET: Return minimal info about current user.\nDELETE: Deactivate current account.",
+        responses={200: MeMinimalSerializer, 204: OpenApiResponse(description="Deactivated")},
     )
+    @decorators.action(detail=False, methods=["get", "delete"], url_path="me", permission_classes=[permissions.IsAuthenticated])
     def me(self, request: Request):
+        """Return current user's info or deactivate their account."""
         if request.method == "DELETE":
             UserService.deactivate_self(user=request.user)
             return response.Response({"status": "deactivated"}, status=status.HTTP_204_NO_CONTENT)
-
         ser = MeMinimalSerializer(request.user, context={"request": request})
         return response.Response(ser.data, status=status.HTTP_200_OK)
 
-    @decorators.action(
-        detail=False,
-        methods=["get"],
-        url_path="me/following",
-        permission_classes=[permissions.IsAuthenticated],
+    @extend_schema(
+        tags=["Users"],
+        summary="My following list",
+        description="Retrieve paginated list of users the authenticated user follows.",
+        responses=UserListSerializer,
     )
+    @decorators.action(detail=False, methods=["get"], url_path="me/following", permission_classes=[permissions.IsAuthenticated])
     def my_following(self, request: Request):
+        """Return list of users the current user follows."""
         page = self.paginate_queryset(following_qs(request.user))
         ser = UserListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
-    
-    @decorators.action(
-    detail=True,
-    methods=["get"],
-    url_path="followers",
-    permission_classes=[permissions.AllowAny],
-)
+
+    @extend_schema(
+        tags=["Users"],
+        summary="User followers",
+        description="Retrieve paginated list of users who follow the given user.",
+        responses=UserListSerializer,
+        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True, type=int)],
+    )
+    @decorators.action(detail=True, methods=["get"], url_path="followers", permission_classes=[permissions.AllowAny])
     def followers(self, request: Request, pk: str | None = None):
+        """Return list of users following this user."""
         user = self.get_object()
         page = self.paginate_queryset(followers_qs(user))
         ser = UserListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
 
-    @decorators.action(
-        detail=False,
-        methods=["get"],
-        url_path="me/followers",
-        permission_classes=[permissions.IsAuthenticated],
+    @extend_schema(
+        tags=["Users"],
+        summary="My followers list",
+        description="Retrieve paginated list of users who follow the authenticated user.",
+        responses=UserListSerializer,
     )
+    @decorators.action(detail=False, methods=["get"], url_path="me/followers", permission_classes=[permissions.IsAuthenticated])
     def my_followers(self, request: Request):
+        """Return list of users who follow the current user."""
         page = self.paginate_queryset(followers_qs(request.user))
         ser = UserListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
-
-
