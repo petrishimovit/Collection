@@ -6,6 +6,11 @@ from ..managers import UserManager
 
 
 class User(BaseModel, AbstractUser):
+    """
+    User model using email as the unique identifier.
+
+    Supports following other users via the Follow model.
+    """
     username = None
     email = models.EmailField("Email", unique=True)
     display_name = models.CharField("Display name", max_length=150)

@@ -4,6 +4,12 @@ from django.core.exceptions import ValidationError
 from core.models import BaseModel
 
 class Profile(BaseModel):
+    """
+    User profile with personal and social information.
+
+    Extends the user model with avatar, bio, website,
+    and optional social links or collection focus.
+    """
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

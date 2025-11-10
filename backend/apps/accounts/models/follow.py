@@ -4,7 +4,12 @@ from core.models import BaseModel
 
 
 class Follow(BaseModel):
-    """follow relationship: follower -> following"""
+    """
+    Follow relationship between users.
+
+    Defines a one-way link where one user (`follower`)
+    subscribes to another (`following`).
+    """
 
     follower = models.ForeignKey(
         "accounts.User",
