@@ -51,4 +51,17 @@ def test_user_followers_count():
 
     
 
-    
+@pytest.mark.django_db
+def test_follow_api(api_client):
+    u1 = User.objects.create_user(email="a@a.com", display_name="A", password="12345")
+    u2 = User.objects.create_user(email="b@b.com", display_name="B", password="12345")
+
+    UserService.toggle_follow(actor=u1,target=u2)
+
+    response = api_client.get(f"/users/{u1.id}/following/")
+
+    assert response.data["results"]  
+
+    response = api_client.get(f"/users/{u2.id}/following/")
+
+    assert not response.data["results"]  
