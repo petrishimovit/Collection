@@ -46,7 +46,6 @@ def test_user_followers_count():
 
     assert u1.followers_count == 0
 
-
     assert u2.followers_count == 1
 
     
@@ -60,7 +59,7 @@ def test_follow_api(api_client):
 
     response = api_client.get(f"/users/{u1.id}/following/")
 
-    assert response.data["results"]  
+    assert response.data["results"][0]["id"] == str(u2.id)
 
     response = api_client.get(f"/users/{u2.id}/following/")
 

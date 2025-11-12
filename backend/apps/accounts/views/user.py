@@ -32,7 +32,7 @@ User = get_user_model()
         summary="Get user",
         description="Retrieve detailed information about a specific user (excluding email).",
         responses=UserDetailSerializer,
-        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True, type=int)],
+        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True)],
     ),
 )
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -170,7 +170,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         summary="List user's following",
         description="Retrieve paginated list of users the given user follows.",
         responses=UserListSerializer,
-        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True, type=int)],
+        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True)]
     )
     @decorators.action(detail=True, methods=["get"], url_path="following", permission_classes=[permissions.AllowAny])
     def following(self, request: Request, pk: str | None = None):
@@ -213,7 +213,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         summary="User followers",
         description="Retrieve paginated list of users who follow the given user.",
         responses=UserListSerializer,
-        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True, type=int)],
+        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True)],
     )
     @decorators.action(detail=True, methods=["get"], url_path="followers", permission_classes=[permissions.AllowAny])
     def followers(self, request: Request, pk: str | None = None):
