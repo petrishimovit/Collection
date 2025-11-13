@@ -50,7 +50,7 @@ class UserService:
         """
         if display_name is not None:
             user.display_name = display_name
-            user.save(update_fields=["display_name"])
+            user.save()
 
 
 
@@ -61,4 +61,4 @@ class UserService:
         Deactivate the given user account.
         """
         user.is_active = False
-        user.save(update_fields=["is_active"])
+        user.save()

@@ -59,12 +59,6 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         tags=["Users"],
         summary="Follow or unfollow user",
         description="Toggle the follow status for the target user. Returns the action result.",
-        responses={
-            200: OpenApiResponse(FollowActionOut),
-            400: OpenApiResponse(description="Cannot follow yourself / Bad request"),
-            401: OpenApiResponse(description="Authentication required"),
-            404: OpenApiResponse(description="User not found"),
-        },
         examples=[
             OpenApiExample("Followed", value={"status": "followed"}),
             OpenApiExample("Unfollowed", value={"status": "unfollowed"}),
@@ -95,25 +89,6 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
             "PATCH/PUT: Update user's display name and profile fields."
         ),
         request=ProfileUpdateIn,
-        responses={
-            200: OpenApiResponse(ProfileOut),
-            400: OpenApiResponse(description="Validation error"),
-            401: OpenApiResponse(description="Authentication required"),
-            403: OpenApiResponse(description="Not allowed"),
-            404: OpenApiResponse(description="User not found"),
-        },
-        examples=[
-            OpenApiExample(
-                "Profile GET response",
-                value={"display_name": "Petr", "profile": {"avatar": None, "bio": "Hi!", "collection_focus": "Cards"}},
-                response_only=True,
-            ),
-            OpenApiExample(
-                "Profile PATCH body",
-                value={"display_name": "New Petr", "profile": {"bio": "Updated", "website": "https://example.com"}},
-                request_only=True,
-            ),
-        ],
     )
     @decorators.action(
         detail=True,

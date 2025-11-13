@@ -1,11 +1,34 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
+
 class IsSelfOrStaff(BasePermission):
-    
+    """
+    Permission that allows access only to:
+      • the object owner (user == target_user)
+      • staff users
+      • superusers (implicitly allowed via is_staff or explicit check)
+    """
+
     def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS:
-            return True
-        if not request.user or not request.user.is_authenticated:
+        """
+        Check object-level access permissions.
+        """
+        user = request.user
+
+        if not user.is_authenticated:
             return False
-        target_user_id = getattr(obj, "id", None) or getattr(obj, "user_id", None)
-        return request.user.is_staff or request.user.id == target_user_id
+        
+        if user.is_superuser:
+            return True
+
+        if hasattr(obj, "user_id"):
+            target_user_id = obj.user_id
+        elif hasattr(obj, "id"):
+            target_user_id = obj.id
+        else:
+            return False
+
+   
+        if request.method in SAFE_METHODS:
+            return user.id == target_user_id or user.is_staff
+        return user.id == target_user_id or user.is_staff

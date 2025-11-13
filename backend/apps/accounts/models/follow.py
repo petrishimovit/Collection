@@ -24,10 +24,7 @@ class Follow(BaseModel):
 
     class Meta:
         db_table = "accounts_follow"
-        indexes = [
-            models.Index(fields=["follower"]),
-            models.Index(fields=["following"]),
-        ]
+
         constraints = [
             models.UniqueConstraint(
                 fields=["follower", "following"], name="uq_follow_unique"
