@@ -16,19 +16,6 @@ from apps.collection.permissions.collection import IsCollectionOwnerOrReadOnly
 class CollectionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing user collections.
-
-    This ViewSet provides full CRUD functionality for the `Collection` model:
-      - **GET /api/collections/** — list all collections (public)
-      - **GET /api/collections/{id}/** — retrieve a specific collection
-      - **GET /api/collections/me/** — list collections owned by the current user
-      - **POST /api/collections/** — create a new collection (authenticated users only)
-      - **PUT /api/collections/{id}/** — update a collection (owner only)
-      - **PATCH /api/collections/{id}/** — partially update a collection (owner only)
-      - **DELETE /api/collections/{id}/** — delete a collection (owner only)
-
-    Access control:
-      - Read operations (GET) are public.
-      - Write operations (POST, PUT, PATCH, DELETE) are restricted to the collection owner.
     """
 
     serializer_class: Type[Serializer] = CollectionSerializer
