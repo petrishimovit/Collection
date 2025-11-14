@@ -5,13 +5,14 @@ from rest_framework.permissions import BasePermission
 from rest_framework.serializers import Serializer
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
+
 
 from apps.collection.models import Item
 from apps.collection.serializers.item import ItemSerializer
 from apps.collection.permissions.item import IsItemOwnerOrReadOnly
 from apps.collection.pagination import DefaultPageNumberPagination
 
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 
 @extend_schema_view(
     list=extend_schema(
@@ -69,7 +70,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         )
 
     def get_permissions(self):
-        if self.action in ("list", "retrieve"):
+        if self.action in ("list", "retrieve"): 
             return [permissions.AllowAny()]
         return [perm() for perm in self.permission_classes]
 
