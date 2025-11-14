@@ -13,6 +13,40 @@ from apps.collection.pagination import DefaultPageNumberPagination
 from apps.collection.permissions.collection import IsCollectionOwnerOrReadOnly
 
 
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List public collections",
+        description="Return all public collections with item counts.",
+        responses={200: CollectionSerializer},
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a collection",
+        description="Get detailed info about a specific public collection.",
+        responses={200: CollectionSerializer, 404: OpenApiResponse(description="Not found")},
+    ),
+    create=extend_schema(
+        summary="Create a collection",
+        description="Create a new collection owned by the authenticated user.",
+        responses={201: CollectionSerializer, 403: OpenApiResponse(description="Authentication required")},
+    ),
+    update=extend_schema(
+        summary="Update a collection",
+        description="Update collection data. Owner only.",
+        responses={200: CollectionSerializer, 403: OpenApiResponse(description="Forbidden")},
+    ),
+    partial_update=extend_schema(
+        summary="Partially update a collection",
+        description="Partially update collection fields. Owner only.",
+        responses={200: CollectionSerializer, 403: OpenApiResponse(description="Forbidden")},
+    ),
+    destroy=extend_schema(
+        summary="Delete a collection",
+        description="Delete a collection. Owner only.",
+        responses={204: OpenApiResponse(description="Deleted"), 403: OpenApiResponse(description="Forbidden")},
+    ),
+)
 class CollectionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing user collections.
@@ -21,6 +55,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
     serializer_class: Type[Serializer] = CollectionSerializer
     pagination_class = DefaultPageNumberPagination
     permission_classes = [IsCollectionOwnerOrReadOnly]
+
 
     def get_public_queryset(self) -> QuerySet[Collection]:
         """
@@ -96,6 +131,12 @@ class CollectionViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Authentication required.")
         serializer.save(owner=user)
 
+
+    @extend_schema(
+        summary="List my collections",
+        description="Return collections owned by the authenticated user.",
+        responses={200: CollectionSerializer(many=True)},
+    )
     @action(
         detail=False,
         methods=["get"],
@@ -106,12 +147,6 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def me(self, request) -> Response:
         """
         Retrieve only collections belonging to the authenticated user.
-
-        Endpoint:
-            **GET /api/collections/me/**
-
-        Returns:
-            Response: Paginated or full list of the user's own collections.
         """
         qs = self.get_private_queryset()
         page = self.paginate_queryset(qs)
