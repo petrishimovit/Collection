@@ -4,6 +4,9 @@ from core.models import BaseModel
 
 
 class Post(BaseModel):
+    """
+    User-created post with optional title and text body.
+    """
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts")
     title = models.CharField(max_length=200, blank=True)
     body = models.TextField(blank=True,max_length=400)

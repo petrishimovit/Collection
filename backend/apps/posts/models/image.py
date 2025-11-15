@@ -4,12 +4,20 @@ from core.models import BaseModel
 
 
 def post_image_upload_to(instance: "PostImage", filename: str) -> str:
+    """
+    Build upload path for post images.
+
+    Example: posts/<post_id|unassigned>/<uuid>_<original_name>
+    """
     stem = f"{uuid4().hex[:8]}_{filename}"
     post_part = instance.post_id or "unassigned"
     return f"posts/{post_part}/{stem}"
 
 
 class PostImage(BaseModel):
+    """
+    Image attached to a post.
+    """
     post = models.ForeignKey(
         "posts.Post",
         on_delete=models.CASCADE,

@@ -4,6 +4,9 @@ from core.models import BaseModel
 
 
 class PostReaction(BaseModel):
+    """
+    Reaction (like/dislike) left by a user on a post.
+    """
     LIKE = "like"
     DISLIKE = "dislike"
 
@@ -25,6 +28,9 @@ class PostReaction(BaseModel):
 
 
 class CommentReaction(BaseModel):
+    """
+    Reaction (like/dislike) left by a user on a comment.
+    """
     LIKE = "like"
     DISLIKE = "dislike"
 
