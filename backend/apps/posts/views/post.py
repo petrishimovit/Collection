@@ -12,7 +12,8 @@ from apps.posts.serializers import (
     ReactionRequestSerializer, PostCreateSerializer
 )
 from apps.posts.services.post import PostService
-from apps.posts.selectors import following_qs
+from apps.posts.selectors.user import following_qs 
+from apps.posts.selectors.post import comments_qs
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -102,7 +103,7 @@ class PostViewSet(viewsets.ModelViewSet):
         post = self.get_object()
 
         if request.method == "GET":
-            qs = PostService.comments_qs(post)
+            qs = comments_qs(post)
             page = self.paginate_queryset(qs)
             if page is not None:
                 ser = CommentSerializer(page, many=True, context={"request": request})
