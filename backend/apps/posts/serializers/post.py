@@ -40,6 +40,11 @@ class PostListSerializer(serializers.ModelSerializer):
 
 
 class PostDetailSerializer(PostListSerializer):
+    """
+    Detailed serializer for a single post.
+    Includes attached images and reaction counters.
+    """
+
     images = serializers.SerializerMethodField()
 
     class Meta(PostListSerializer.Meta):
@@ -64,6 +69,9 @@ class PostDetailSerializer(PostListSerializer):
 
 
 class PostCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating a post with optional image uploads.
+    """
     images = serializers.ListField(
         child=serializers.ImageField(),
         required=False,
