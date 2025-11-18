@@ -88,7 +88,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
     @decorators.action(
         detail=True,
-        methods=["get", "post", "delete"],
+        methods=["get", "post"],
         url_path="comments",
         pagination_class=CommentPagination,
         permission_classes=[permissions.IsAuthenticatedOrReadOnly],
@@ -120,10 +120,6 @@ class PostViewSet(viewsets.ModelViewSet):
             out = CommentSerializer(comment, context={"request": request})
             return response.Response(out.data, status=status.HTTP_201_CREATED)
 
-        # DELETE
-        comment_id = request.query_params.get("id")
-        PostService.delete_comment(post=post, user=request.user, comment_id=comment_id)
-        return response.Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         summary="Toggle post reaction",
