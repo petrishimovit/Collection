@@ -13,8 +13,8 @@ def test_comment_str_and_reaction_properties():
     # Arrange
     u1 = User.objects.create_user("a@a.com", display_name="A", password="12345")
     u2 = User.objects.create_user("b@b.com", display_name="B", password="12345")
-    post = Post.objects.create(author=u1, title="T", body="b")
-    comment = Comment.objects.create(post=post, author=u1, body="hi")
+    post = Post.objects.create(author=u1, text="post text")
+    comment = Comment.objects.create(post=post, author=u1, text="hi")
 
     CommentReaction.objects.create(comment=comment, user=u1, type=CommentReaction.LIKE)
     CommentReaction.objects.create(comment=comment, user=u2, type=CommentReaction.DISLIKE)
@@ -28,15 +28,15 @@ def test_comment_str_and_reaction_properties():
 def test_post_service_create_and_delete_comment():
     # Arrange
     user = User.objects.create_user("a@a.com", display_name="A", password="12345")
-    post = Post.objects.create(author=user, title="T", body="b")
+    post = Post.objects.create(author=user, text="post text")
 
     # Act
-    comment = PostService.create_comment(post=post, user=user, body="hello")
+    comment = PostService.create_comment(post=post, user=user, text="hello")
 
     # Assert
     assert comment.post_id == post.id
     assert comment.author_id == user.id
-    assert comment.body == "hello"
+    assert comment.text == "hello"
 
     # Act 2: delete
     PostService.delete_comment(post=post, user=user, comment_id=comment.id)
@@ -49,8 +49,8 @@ def test_post_service_delete_comment_wrong_user_forbidden():
     # Arrange
     author = User.objects.create_user("a@a.com", display_name="A", password="12345")
     other = User.objects.create_user("b@b.com", display_name="B", password="12345")
-    post = Post.objects.create(author=author, title="T", body="b")
-    comment = Comment.objects.create(post=post, author=author, body="hi")
+    post = Post.objects.create(author=author, text="post text")
+    comment = Comment.objects.create(post=post, author=author, text="hi")
 
     # Act / Assert
     with pytest.raises(PermissionDenied):
@@ -60,8 +60,8 @@ def test_post_service_delete_comment_wrong_user_forbidden():
 def test_comment_service_toggle_reaction_cycle():
     # Arrange
     user = User.objects.create_user("a@a.com", display_name="A", password="12345")
-    post = Post.objects.create(author=user, title="T", body="b")
-    comment = Comment.objects.create(post=post, author=user, body="hi")
+    post = Post.objects.create(author=user, text="post text")
+    comment = Comment.objects.create(post=post, author=user, text="hi")
 
     # Act
     d1 = CommentService.toggle_reaction(comment=comment, user=user, reaction_type="like")

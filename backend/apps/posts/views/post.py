@@ -36,8 +36,6 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self._base_qs().order_by("-created_at", "-id")
-    
-    
 
     def get_serializer_class(self):
         """Pick serializer by action."""
@@ -47,17 +45,6 @@ class PostViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Create a post",
-        request={
-            "multipart/form-data": {
-                "type": "object",
-                "properties": {
-                    "title": {"type": "string"},
-                    "body": {"type": "string"},
-                    "images": {"type": "array", "items": {"type": "string", "format": "binary"}},
-                },
-                "required": ["title"],
-            }
-        },
         responses={201: PostDetailSerializer},
     )
     def create(self, request, *args, **kwargs):
@@ -115,7 +102,9 @@ class PostViewSet(viewsets.ModelViewSet):
             ser = CommentSerializer(data=request.data, context={"request": request})
             ser.is_valid(raise_exception=True)
             comment = PostService.create_comment(
-                post=post, user=request.user, body=ser.validated_data["body"]
+                post=post,
+                user=request.user,
+                text=ser.validated_data["text"],
             )
             out = CommentSerializer(comment, context={"request": request})
             return response.Response(out.data, status=status.HTTP_201_CREATED)

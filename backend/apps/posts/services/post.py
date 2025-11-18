@@ -17,13 +17,13 @@ class PostService:
     """
     
     @staticmethod
-    def create_comment(*, post: Post, user, body: str) -> Comment:
+    def create_comment(*, post: Post, user, text: str) -> Comment:
         """
         Create a comment for a post.
         """
         if not user or not user.is_authenticated:
             raise PermissionDenied("Authentication required.")
-        return Comment.objects.create(post=post, author=user, body=body)
+        return Comment.objects.create(post=post, author=user, text=text)
 
     @staticmethod
     def delete_comment(*, post: Post, user, comment_id: int) -> None:

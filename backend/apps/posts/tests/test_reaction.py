@@ -9,7 +9,7 @@ pytestmark = pytest.mark.django_db
 def test_post_react_like(api_client):
     # Arrange
     user = User.objects.create_user("a@a.com", display_name="A", password="12345")
-    post = Post.objects.create(author=user, title="T", body="b")
+    post = Post.objects.create(author=user, text="post text")
 
     api_client.force_authenticate(user)
 
@@ -25,7 +25,7 @@ def test_post_react_like(api_client):
 def test_post_react_toggle_remove(api_client):
     # Arrange
     user = User.objects.create_user("a@a.com", display_name="A", password="12345")
-    post = Post.objects.create(author=user, title="T", body="b")
+    post = Post.objects.create(author=user, text="post text")
 
     api_client.force_authenticate(user)
     api_client.post(f"/posts/{post.id}/react/", {"type": "like"}, format="json")
@@ -42,8 +42,8 @@ def test_post_react_toggle_remove(api_client):
 def test_comment_react_like(api_client):
     # Arrange
     user = User.objects.create_user("a@a.com", display_name="A", password="12345")
-    post = Post.objects.create(author=user, title="T", body="b")
-    comment = Comment.objects.create(post=post, author=user, body="hi")
+    post = Post.objects.create(author=user, text="post text")
+    comment = Comment.objects.create(post=post, author=user, text="hi")
 
     api_client.force_authenticate(user)
 
@@ -59,8 +59,8 @@ def test_comment_react_like(api_client):
 def test_comment_react_toggle_change(api_client):
     # Arrange
     user = User.objects.create_user("a@a.com", display_name="A", password="12345")
-    post = Post.objects.create(author=user, title="T", body="b")
-    comment = Comment.objects.create(post=post, author=user, body="hi")
+    post = Post.objects.create(author=user, text="post text")
+    comment = Comment.objects.create(post=post, author=user, text="hi")
 
     api_client.force_authenticate(user)
     api_client.post(f"/comments/{comment.id}/react/", {"type": "like"}, format="json")

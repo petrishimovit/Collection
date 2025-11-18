@@ -22,8 +22,8 @@ class PostListSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "author",
-            "title",
-            "body",
+            "text",
+            
             "likes_count",
             "dislikes_count",
             "comments_count",
@@ -80,7 +80,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ("title", "body", "images")
+        fields = ("text", "images")
 
     def validate_images(self, files):
         

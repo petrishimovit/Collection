@@ -9,7 +9,7 @@ class Comment(BaseModel):
     """
     post = models.ForeignKey("posts.Post", on_delete=models.CASCADE, related_name="comments")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments")
-    body = models.TextField(max_length=200)
+    text = models.CharField(max_length=400, blank=True)
 
     class Meta:
         ordering = ["created_at", "id"]
