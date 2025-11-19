@@ -9,7 +9,7 @@ class Post(BaseModel):
     """
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts")
     text = models.CharField(max_length=400, blank=True)
-    
+    views_count = models.PositiveIntegerField(default=0, db_index=True)
 
     class Meta:
         ordering = ["-created_at", "-id"]

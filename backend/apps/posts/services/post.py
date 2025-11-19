@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Literal, Dict
 
 from django.db import transaction, models
-from django.db.models import Count
+from django.db.models import Count, F
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.posts.models import Post, Comment, PostReaction
@@ -107,3 +107,21 @@ class PostService:
             "likes": likes,
             "dislikes": dislikes,
         }
+    
+    @staticmethod
+    def register_view_for_request(post, user, request) -> bool:
+        """
+        Increments views count for a post.
+
+        Args:
+            post: Target post.
+            user: Acting user.
+            request: DRF request object.
+
+        Returns:
+            Bool
+        """
+        if user.is_authenticated and user == post.author:
+            return False
+        Post.objects.filter(id=post.id).update(views_count=F("views_count") + 1)
+        return True

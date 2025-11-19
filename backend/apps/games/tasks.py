@@ -3,8 +3,8 @@ from celery import shared_task
 from django.utils import timezone
 from django.db import transaction
 
-from games.models import PriceChartingConnect
-from games.services.pricecharting import PricechartingService
+from apps.games.models import PriceChartingConnect
+from apps.games.services.pricecharting import PricechartingService
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=30)

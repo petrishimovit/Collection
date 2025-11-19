@@ -12,10 +12,8 @@ def test_post_str_has_id_or_label():
     user = User.objects.create_user("a@a.com", display_name="A", password="12345")
     post = Post.objects.create(author=user, text="Hello world")
 
-    # Assert: не привязываемся к конкретному полю,
-    # но проверяем, что строка не пустая и содержит id или слово Post
-    s = str(post)
-    assert s
+    # Assert
+    assert str(post)
     
 
 

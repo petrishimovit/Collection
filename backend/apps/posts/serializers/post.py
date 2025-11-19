@@ -23,10 +23,11 @@ class PostListSerializer(serializers.ModelSerializer):
             "updated_at",
             "author",
             "text",
-            
             "likes_count",
             "dislikes_count",
             "comments_count",
+            "views_count"
+
         )
         read_only_fields = (
             "id",
@@ -36,6 +37,7 @@ class PostListSerializer(serializers.ModelSerializer):
             "likes_count",
             "dislikes_count",
             "comments_count",
+            "views_count"
         )
 
 
@@ -53,7 +55,7 @@ class PostDetailSerializer(PostListSerializer):
             "likes_count",
             "dislikes_count",
         )
-        read_only_fields = ("likes_count", "dislikes_count")
+        read_only_fields = PostListSerializer.Meta.read_only_fields
 
     def get_images(self, obj):
         return [

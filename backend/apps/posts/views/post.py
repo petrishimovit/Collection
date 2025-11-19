@@ -42,6 +42,20 @@ class PostViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return PostCreateSerializer
         return PostListSerializer if self.action == "list" else PostDetailSerializer
+    
+    def retrieve(self, request, *args, **kwargs):
+        post = self.get_object()
+
+        updated = PostService.register_view_for_request(
+            post=post,
+            user=request.user,
+            request=request,
+        )
+        if updated:
+            post.views_count = (post.views_count or 0) + 1
+
+        serializer = self.get_serializer(post)
+        return response.Response(serializer.data)
 
     @extend_schema(
         summary="Create a post",
