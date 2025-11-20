@@ -1,49 +1,52 @@
-from django.db.models import Count, Q, Max
 from rest_framework import viewsets, permissions, response, status, decorators
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from drf_spectacular.utils import extend_schema
 
-from apps.posts.models import Post, PostReaction
+from apps.posts.models import PostReaction
 from apps.posts.permissions import IsAuthorOrReadOnly
 from apps.posts.pagination import PostPagination, CommentPagination
 from apps.posts.serializers import (
-    PostListSerializer, PostDetailSerializer, CommentSerializer,
-    ReactionRequestSerializer, PostCreateSerializer
+    PostListSerializer,
+    PostDetailSerializer,
+    CommentSerializer,
+    ReactionRequestSerializer,
+    PostCreateSerializer,
 )
 from apps.posts.services.post import PostService
-from apps.posts.selectors.user import following_qs 
-from apps.posts.selectors.post import comments_qs
+from apps.posts.selectors.post import (
+    comments_qs,
+    posts_list_qs,
+    liked_by_user_qs,
+    feed_qs,
+)
 
 
 class PostViewSet(viewsets.ModelViewSet):
-
+    """
+    CRUD operations for posts, with additional actions:
+    - comments list/create
+    - like/dislike reactions
+    - liked-by-me list
+    - personalized feed
+    """
 
     permission_classes = [IsAuthorOrReadOnly]
     pagination_class = PostPagination
-    parser_classes=[MultiPartParser, FormParser, JSONParser]
-
-    def _base_qs(self):
-        return (
-            Post.objects
-            .select_related("author")
-            .annotate(
-                _likes_count=Count("reactions", filter=Q(reactions__type=PostReaction.LIKE)),
-                _dislikes_count=Count("reactions", filter=Q(reactions__type=PostReaction.DISLIKE)),
-                _comments_count=Count("comments"),
-            )
-        )
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
-        return self._base_qs().order_by("-created_at", "-id")
+        """Return default posts list queryset."""
+        return posts_list_qs()
 
     def get_serializer_class(self):
-        """Pick serializer by action."""
+        """Return serializer based on action."""
         if self.action == "create":
             return PostCreateSerializer
         return PostListSerializer if self.action == "list" else PostDetailSerializer
-    
+
     def retrieve(self, request, *args, **kwargs):
+        """Retrieve and register a view for the post."""
         post = self.get_object()
 
         updated = PostService.register_view_for_request(
@@ -62,7 +65,7 @@ class PostViewSet(viewsets.ModelViewSet):
         responses={201: PostDetailSerializer},
     )
     def create(self, request, *args, **kwargs):
-        """Create a post (images only on create)."""
+        """Create a new post (images allowed only during creation)."""
         if not request.user.is_authenticated:
             raise PermissionDenied("Authentication required.")
         serializer = self.get_serializer(data=request.data)
@@ -72,7 +75,7 @@ class PostViewSet(viewsets.ModelViewSet):
         return response.Response(out.data, status=status.HTTP_201_CREATED)
 
     def perform_update(self, serializer):
-        """Update a post (no images)."""
+        """Update a post (images cannot be modified)."""
         obj = self.get_object()
         if obj.author_id != self.request.user.id:
             raise PermissionDenied("You can update only your own posts.")
@@ -87,6 +90,8 @@ class PostViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You can delete only your own posts.")
         instance.delete()
 
+    # -------------------------- COMMENTS --------------------------
+
     @decorators.action(
         detail=True,
         methods=["get", "post"],
@@ -95,12 +100,12 @@ class PostViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticatedOrReadOnly],
     )
     @extend_schema(
-        summary="Manage post comments",
+        summary="List or create comments for a post",
         request={"POST": CommentSerializer},
-        responses={200: CommentSerializer, 201: CommentSerializer, 204: None},
+        responses={200: CommentSerializer, 201: CommentSerializer},
     )
     def comments(self, request, pk=None):
-        """List, create, or delete a comment for a post."""
+        """List or create comments for the post."""
         post = self.get_object()
 
         if request.method == "GET":
@@ -123,9 +128,10 @@ class PostViewSet(viewsets.ModelViewSet):
             out = CommentSerializer(comment, context={"request": request})
             return response.Response(out.data, status=status.HTTP_201_CREATED)
 
+    # -------------------------- REACTIONS --------------------------
 
     @extend_schema(
-        summary="Toggle post reaction",
+        summary="Toggle post reaction (like/dislike)",
         request=ReactionRequestSerializer,
         responses={
             200: {
@@ -135,19 +141,19 @@ class PostViewSet(viewsets.ModelViewSet):
                     "likes": {"type": "integer"},
                     "dislikes": {"type": "integer"},
                 },
-                "required": ["status", "likes", "dislikes"],
             }
         },
     )
     @decorators.action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def react(self, request, pk=None):
-        """Toggle like/dislike on a post."""
+        """Toggle like or dislike on a post."""
         post = self.get_object()
         reaction_type = request.data.get("type")
         data = PostService.toggle_reaction(post=post, user=request.user, reaction_type=reaction_type)
         return response.Response(data, status=status.HTTP_200_OK)
-    
-   
+
+    # -------------------------- LIKED BY ME --------------------------
+
     @decorators.action(
         detail=False,
         methods=["get"],
@@ -156,19 +162,13 @@ class PostViewSet(viewsets.ModelViewSet):
         pagination_class=PostPagination,
     )
     def liked_by_me(self, request):
-       
-        qs = self._base_qs().filter(
-            reactions__user=request.user,
-            reactions__type=PostReaction.LIKE,
-        ).annotate(
-            reacted_at=Max("reactions__created_at", filter=Q(reactions__user=request.user,
-                                                             reactions__type=PostReaction.LIKE))
-        ).order_by("-reacted_at", "-created_at", "-id").distinct()
-
+        """Return posts liked by the authenticated user."""
+        qs = liked_by_user_qs(request.user)
         page = self.paginate_queryset(qs)
         ser = PostListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
 
+    # -------------------------- FEED --------------------------
 
     @decorators.action(
         detail=False,
@@ -178,10 +178,8 @@ class PostViewSet(viewsets.ModelViewSet):
         pagination_class=PostPagination,
     )
     def feed(self, request):
-       
-        followed_users = following_qs(request.user).values("id")  
-        qs = self._base_qs().filter(author_id__in=followed_users).order_by("-created_at", "-id")
-
+        """Return personalized feed from followed authors."""
+        qs = feed_qs(request.user)
         page = self.paginate_queryset(qs)
         ser = PostListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)

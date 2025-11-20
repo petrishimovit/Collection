@@ -6,3 +6,5 @@ def following_qs(user: User):
     """
     return user.following.all()
 
+
+
