@@ -1,6 +1,7 @@
 from rest_framework import viewsets, permissions, response, status, decorators
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
+from rest_framework.filters import OrderingFilter
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
@@ -34,6 +35,19 @@ from apps.posts.selectors.post import (
         description="Return a paginated list of posts ordered by creation date.",
         responses={200: PostListSerializer},
         tags=["posts"],
+        parameters=[
+            OpenApiParameter(
+                name="ordering",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Sort posts by one of: "
+                    "`created_at`, `-created_at`, "
+                    "`views_count`, `-views_count`, "
+                    "`likes_count`, `-likes_count`."
+                ),
+            ),
+        ],
     ),
     retrieve=extend_schema(
         summary="Retrieve a post",
@@ -74,6 +88,14 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthorOrReadOnly]
     pagination_class = PostPagination
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    filter_backends = (OrderingFilter,)
+    ordering_fields = (
+        "created_at",
+        "views_count",
+        "likes_count",
+    )
+    ordering = ("-created_at",)
 
     def get_queryset(self):
         """Return default posts list queryset."""
@@ -211,7 +233,24 @@ class PostViewSet(viewsets.ModelViewSet):
         ser = PostListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
    
-
+    @extend_schema(
+        summary="Personalized feed",
+        description="Return a feed of posts from authors the user follows, ordered by recency and activity.",
+        responses=PostListSerializer(many=True),
+        parameters=[
+            OpenApiParameter(
+                name="ordering",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Sort feed by one of: "
+                    "`created_at`, `-created_at`, "
+                    "`views_count`, `-views_count`, "
+                    "`likes_count`, `-likes_count`."
+                ),
+            ),
+        ],
+    )
     @decorators.action(
         detail=False,
         methods=["get"],
@@ -219,15 +258,10 @@ class PostViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
         pagination_class=PostPagination,
     )
-    @extend_schema(
-        summary="Personalized feed",
-        description="Return a feed of posts from authors the user follows, ordered by recency and activity.",
-        responses={200: PostListSerializer},
-        tags=["posts:feed"],
-    )
     def feed(self, request):
         """Return personalized feed from followed authors."""
         qs = feed_qs(request.user)
+        qs = self.filter_queryset(qs) 
         page = self.paginate_queryset(qs)
         ser = PostListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
