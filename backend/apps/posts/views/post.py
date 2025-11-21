@@ -1,7 +1,12 @@
 from rest_framework import viewsets, permissions, response, status, decorators
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+)
+from drf_spectacular.types import OpenApiTypes
 
 from apps.posts.models import PostReaction
 from apps.posts.permissions import IsAuthorOrReadOnly
@@ -19,16 +24,51 @@ from apps.posts.selectors.post import (
     posts_list_qs,
     liked_by_user_qs,
     feed_qs,
+    search_posts_qs,
 )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List posts",
+        description="Return a paginated list of posts ordered by creation date.",
+        responses={200: PostListSerializer},
+        tags=["posts"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a post",
+        description="Return a single post by ID.",
+        responses={200: PostDetailSerializer},
+        tags=["posts"],
+    ),
+    create=extend_schema(
+        summary="Create a post",
+        description="Create a new post. Images can only be attached on creation.",
+        request=PostCreateSerializer,
+        responses={201: PostDetailSerializer},
+        tags=["posts"],
+    ),
+    partial_update=extend_schema(
+        summary="Update a post",
+        description="Update a post. Images cannot be modified.",
+        request=PostCreateSerializer,
+        responses={200: PostDetailSerializer},
+        tags=["posts"],
+    ),
+    destroy=extend_schema(
+        summary="Delete a post",
+        description="Delete a post created by the authenticated user.",
+        tags=["posts"],
+    ),
+)
 class PostViewSet(viewsets.ModelViewSet):
     """
-    CRUD operations for posts, with additional actions:
+    Post CRUD and extra actions:
     - comments list/create
     - like/dislike reactions
     - liked-by-me list
     - personalized feed
+    - search
     """
 
     permission_classes = [IsAuthorOrReadOnly]
@@ -60,10 +100,6 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(post)
         return response.Response(serializer.data)
 
-    @extend_schema(
-        summary="Create a post",
-        responses={201: PostDetailSerializer},
-    )
     def create(self, request, *args, **kwargs):
         """Create a new post (images allowed only during creation)."""
         if not request.user.is_authenticated:
@@ -90,7 +126,6 @@ class PostViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You can delete only your own posts.")
         instance.delete()
 
-    # -------------------------- COMMENTS --------------------------
 
     @decorators.action(
         detail=True,
@@ -100,9 +135,11 @@ class PostViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticatedOrReadOnly],
     )
     @extend_schema(
-        summary="List or create comments for a post",
+        summary="List or create comments",
+        description="GET: list comments for a post. POST: create a new comment.",
         request={"POST": CommentSerializer},
         responses={200: CommentSerializer, 201: CommentSerializer},
+        tags=["posts:comments"],
     )
     def comments(self, request, pk=None):
         """List or create comments for the post."""
@@ -128,10 +165,11 @@ class PostViewSet(viewsets.ModelViewSet):
             out = CommentSerializer(comment, context={"request": request})
             return response.Response(out.data, status=status.HTTP_201_CREATED)
 
-    # -------------------------- REACTIONS --------------------------
+  
 
     @extend_schema(
-        summary="Toggle post reaction (like/dislike)",
+        summary="Toggle post reaction",
+        description="Toggle like or dislike on a post. Returns updated counters.",
         request=ReactionRequestSerializer,
         responses={
             200: {
@@ -143,6 +181,7 @@ class PostViewSet(viewsets.ModelViewSet):
                 },
             }
         },
+        tags=["posts:reactions"],
     )
     @decorators.action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def react(self, request, pk=None):
@@ -152,8 +191,6 @@ class PostViewSet(viewsets.ModelViewSet):
         data = PostService.toggle_reaction(post=post, user=request.user, reaction_type=reaction_type)
         return response.Response(data, status=status.HTTP_200_OK)
 
-    # -------------------------- LIKED BY ME --------------------------
-
     @decorators.action(
         detail=False,
         methods=["get"],
@@ -161,14 +198,19 @@ class PostViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
         pagination_class=PostPagination,
     )
+    @extend_schema(
+        summary="List posts liked by me",
+        description="Return posts liked by the authenticated user, ordered by latest reaction.",
+        responses={200: PostListSerializer},
+        tags=["posts:me"],
+    )
     def liked_by_me(self, request):
         """Return posts liked by the authenticated user."""
         qs = liked_by_user_qs(request.user)
         page = self.paginate_queryset(qs)
         ser = PostListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
-
-    # -------------------------- FEED --------------------------
+   
 
     @decorators.action(
         detail=False,
@@ -177,9 +219,50 @@ class PostViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
         pagination_class=PostPagination,
     )
+    @extend_schema(
+        summary="Personalized feed",
+        description="Return a feed of posts from authors the user follows, ordered by recency and activity.",
+        responses={200: PostListSerializer},
+        tags=["posts:feed"],
+    )
     def feed(self, request):
         """Return personalized feed from followed authors."""
         qs = feed_qs(request.user)
+        page = self.paginate_queryset(qs)
+        ser = PostListSerializer(page, many=True, context={"request": request})
+        return self.get_paginated_response(ser.data)
+
+
+
+    @extend_schema(
+    summary="Search posts",
+    description="Search posts by text content using a simple case-insensitive match.",
+    parameters=[
+        OpenApiParameter(
+            name="q",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=True,
+            description="Search query string.",
+        ),
+    ],
+    responses=PostListSerializer(many=True),
+    tags=["posts:search"],
+)
+    @decorators.action(
+        detail=False,
+        methods=["get"],
+        url_path="search",
+        pagination_class=PostPagination,
+        permission_classes=[permissions.AllowAny],
+    )
+    def search(self, request):
+        """Search posts by a query string in the text field."""
+        query = request.query_params.get("q", "").strip()
+        if not query:
+            raise ValidationError({"q": "Query parameter 'q' is required."})
+
+        qs = search_posts_qs(query)
         page = self.paginate_queryset(qs)
         ser = PostListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)

@@ -100,3 +100,17 @@ def liked_by_user_qs(user):
         .order_by("-reacted_at", "-created_at", "-id")
         .distinct()
     )
+
+def search_posts_qs(query: str):
+    """
+    Return posts matching the given search query.
+    Currently searches in the text field (case-insensitive).
+    """
+    if not query:
+        return base_posts_qs().none()
+
+    return (
+        base_posts_qs()
+        .filter(text__icontains=query)
+        .order_by("-created_at", "-id")
+    )
