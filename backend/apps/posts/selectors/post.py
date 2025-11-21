@@ -30,9 +30,11 @@ def comments_qs(post: Post):
 def base_posts_qs():
     """
     Base queryset for posts with annotated counters for likes, dislikes, and comments.
+    NOTE: soft-deleted posts are excluded globally.
     """
     return (
         Post.objects
+        .filter(is_deleted=False)  # ← добавлено
         .select_related("author")
         .annotate(
             _likes_count=Count(
@@ -100,6 +102,7 @@ def liked_by_user_qs(user):
         .order_by("-reacted_at", "-created_at", "-id")
         .distinct()
     )
+
 
 def search_posts_qs(query: str):
     """

@@ -34,7 +34,7 @@ from apps.posts.selectors.post import (
         summary="List posts",
         description="Return a paginated list of posts ordered by creation date.",
         responses={200: PostListSerializer},
-        tags=["posts"],
+        tags=["Posts"],
         parameters=[
             OpenApiParameter(
                 name="ordering",
@@ -53,26 +53,19 @@ from apps.posts.selectors.post import (
         summary="Retrieve a post",
         description="Return a single post by ID.",
         responses={200: PostDetailSerializer},
-        tags=["posts"],
+        tags=["Posts"],
     ),
     create=extend_schema(
         summary="Create a post",
         description="Create a new post. Images can only be attached on creation.",
         request=PostCreateSerializer,
         responses={201: PostDetailSerializer},
-        tags=["posts"],
-    ),
-    partial_update=extend_schema(
-        summary="Update a post",
-        description="Update a post. Images cannot be modified.",
-        request=PostCreateSerializer,
-        responses={200: PostDetailSerializer},
-        tags=["posts"],
+        tags=["Posts"],
     ),
     destroy=extend_schema(
         summary="Delete a post",
-        description="Delete a post created by the authenticated user.",
-        tags=["posts"],
+        description="Soft delete a post created by the authenticated user.",
+        tags=["Posts"],
     ),
 )
 class PostViewSet(viewsets.ModelViewSet):
@@ -88,6 +81,8 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthorOrReadOnly]
     pagination_class = PostPagination
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    http_method_names = ["get", "post", "delete", "head", "options"]
 
     filter_backends = (OrderingFilter,)
     ordering_fields = (
@@ -132,36 +127,30 @@ class PostViewSet(viewsets.ModelViewSet):
         out = PostDetailSerializer(post, context={"request": request})
         return response.Response(out.data, status=status.HTTP_201_CREATED)
 
-    def perform_update(self, serializer):
-        """Update a post (images cannot be modified)."""
-        obj = self.get_object()
-        if obj.author_id != self.request.user.id:
-            raise PermissionDenied("You can update only your own posts.")
-        has_files = bool(getattr(self.request, "FILES", None)) and self.request.FILES
-        if has_files or any(k in self.request.data for k in ("images", "alt", "order")):
-            raise ValidationError("Images can only be attached when creating a post.")
-        serializer.save()
-
     def perform_destroy(self, instance):
-        """Delete a post (author only)."""
+        """Soft delete a post (author only)."""
         if instance.author_id != self.request.user.id:
             raise PermissionDenied("You can delete only your own posts.")
-        instance.delete()
 
+        if getattr(instance, "is_deleted", False):
+            raise ValidationError("Post is already deleted.")
 
+        instance.is_deleted = True
+        instance.save(update_fields=["is_deleted"])
+
+    @extend_schema(
+        summary="List or create comments",
+        description="GET: list comments for a post. POST: create a new comment.",
+        request={"POST": CommentSerializer},
+        responses={200: CommentSerializer, 201: CommentSerializer},
+        tags=["Posts"],
+    )
     @decorators.action(
         detail=True,
         methods=["get", "post"],
         url_path="comments",
         pagination_class=CommentPagination,
         permission_classes=[permissions.IsAuthenticatedOrReadOnly],
-    )
-    @extend_schema(
-        summary="List or create comments",
-        description="GET: list comments for a post. POST: create a new comment.",
-        request={"POST": CommentSerializer},
-        responses={200: CommentSerializer, 201: CommentSerializer},
-        tags=["posts:comments"],
     )
     def comments(self, request, pk=None):
         """List or create comments for the post."""
@@ -187,8 +176,6 @@ class PostViewSet(viewsets.ModelViewSet):
             out = CommentSerializer(comment, context={"request": request})
             return response.Response(out.data, status=status.HTTP_201_CREATED)
 
-  
-
     @extend_schema(
         summary="Toggle post reaction",
         description="Toggle like or dislike on a post. Returns updated counters.",
@@ -203,16 +190,30 @@ class PostViewSet(viewsets.ModelViewSet):
                 },
             }
         },
-        tags=["posts:reactions"],
+        tags=["Posts"],
     )
-    @decorators.action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    @decorators.action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def react(self, request, pk=None):
         """Toggle like or dislike on a post."""
         post = self.get_object()
         reaction_type = request.data.get("type")
-        data = PostService.toggle_reaction(post=post, user=request.user, reaction_type=reaction_type)
+        data = PostService.toggle_reaction(
+            post=post,
+            user=request.user,
+            reaction_type=reaction_type,
+        )
         return response.Response(data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        summary="List posts liked by me",
+        description="Return posts liked by the authenticated user, ordered by latest reaction.",
+        responses={200: PostListSerializer},
+        tags=["Posts"],
+    )
     @decorators.action(
         detail=False,
         methods=["get"],
@@ -220,23 +221,18 @@ class PostViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
         pagination_class=PostPagination,
     )
-    @extend_schema(
-        summary="List posts liked by me",
-        description="Return posts liked by the authenticated user, ordered by latest reaction.",
-        responses={200: PostListSerializer},
-        tags=["posts:me"],
-    )
     def liked_by_me(self, request):
         """Return posts liked by the authenticated user."""
         qs = liked_by_user_qs(request.user)
         page = self.paginate_queryset(qs)
         ser = PostListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
-   
+
     @extend_schema(
         summary="Personalized feed",
         description="Return a feed of posts from authors the user follows, ordered by recency and activity.",
         responses=PostListSerializer(many=True),
+        tags=["Posts"],
         parameters=[
             OpenApiParameter(
                 name="ordering",
@@ -261,28 +257,26 @@ class PostViewSet(viewsets.ModelViewSet):
     def feed(self, request):
         """Return personalized feed from followed authors."""
         qs = feed_qs(request.user)
-        qs = self.filter_queryset(qs) 
+        qs = self.filter_queryset(qs)
         page = self.paginate_queryset(qs)
         ser = PostListSerializer(page, many=True, context={"request": request})
         return self.get_paginated_response(ser.data)
 
-
-
     @extend_schema(
-    summary="Search posts",
-    description="Search posts by text content using a simple case-insensitive match.",
-    parameters=[
-        OpenApiParameter(
-            name="q",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            required=True,
-            description="Search query string.",
-        ),
-    ],
-    responses=PostListSerializer(many=True),
-    tags=["posts:search"],
-)
+        summary="Search posts",
+        description="Search posts by text content using a simple case-insensitive match.",
+        parameters=[
+            OpenApiParameter(
+                name="q",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=True,
+                description="Search query string.",
+            ),
+        ],
+        responses=PostListSerializer(many=True),
+        tags=["Posts"],
+    )
     @decorators.action(
         detail=False,
         methods=["get"],
