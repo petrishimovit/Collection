@@ -34,6 +34,7 @@ THIRD_PARTY_APPS = [
     "drf_spectacular_sidecar",
     "django_celery_beat",
     "corsheaders",
+    "django_filters",
 ]
 
 LOCAL_APPS = [
