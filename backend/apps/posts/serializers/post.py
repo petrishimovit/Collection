@@ -78,6 +78,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
         child=serializers.ImageField(),
         required=False,
         allow_empty=True,
+        write_only=True,
     )
 
     class Meta:
@@ -85,16 +86,21 @@ class PostCreateSerializer(serializers.ModelSerializer):
         fields = ("text", "images")
 
     def validate_images(self, files):
-        
+        """
+        Validate uploaded images count, size and content type.
+        """
         MAX_FILES = 10
-        MAX_SIZE = 5 * 1024 * 1024  
+        MAX_SIZE = 5 * 1024 * 1024  # 5 MB
+
         if len(files) > MAX_FILES:
             raise serializers.ValidationError(f"Максимум {MAX_FILES} изображений.")
+
         for f in files:
             if f.size > MAX_SIZE:
                 raise serializers.ValidationError(f"{f.name}: файл больше 5MB.")
             if not f.content_type.startswith("image/"):
                 raise serializers.ValidationError(f"{f.name}: не является изображением.")
+
         return files
 
     @transaction.atomic
@@ -102,7 +108,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
         images = validated_data.pop("images", [])
         post = Post.objects.create(**validated_data)
         if images:
-            PostImage.objects.bulk_create([
-                PostImage(post=post, image=f) for f in images
-            ])
+            PostImage.objects.bulk_create(
+                [PostImage(post=post, image=f) for f in images]
+            )
         return post

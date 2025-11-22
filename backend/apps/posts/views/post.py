@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, response, status, decorators
+from rest_framework import viewsets, permissions, response, status, decorators,serializers
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework.filters import OrderingFilter
@@ -6,7 +6,9 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
     OpenApiParameter,
+    inline_serializer,
 )
+
 from drf_spectacular.types import OpenApiTypes
 
 from apps.posts.models import PostReaction
@@ -55,13 +57,21 @@ from apps.posts.selectors.post import (
         responses={200: PostDetailSerializer},
         tags=["Posts"],
     ),
-    create=extend_schema(
-        summary="Create a post",
-        description="Create a new post. Images can only be attached on creation.",
-        request=PostCreateSerializer,
-        responses={201: PostDetailSerializer},
-        tags=["Posts"],
+    create = extend_schema(
+    summary="Create a post",
+    request=inline_serializer(
+        name="PostCreateRequest",
+        fields={
+            "text": serializers.CharField(),
+            "images": serializers.ImageField(
+                required=False,
+            
+            ),
+        },
     ),
+    responses={201: PostDetailSerializer},
+    tags=["Posts"],
+),
     destroy=extend_schema(
         summary="Delete a post",
         description="Soft delete a post created by the authenticated user.",
