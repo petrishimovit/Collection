@@ -152,8 +152,9 @@ class PostViewSet(viewsets.ModelViewSet):
         summary="List or create comments",
         description="GET: list comments for a post. POST: create a new comment.",
         request={"POST": CommentSerializer},
-        responses={200: CommentSerializer, 201: CommentSerializer},
+        responses={200: CommentSerializer(many=True), 201: CommentSerializer},
         tags=["Posts"],
+        
     )
     @decorators.action(
         detail=True,
@@ -161,6 +162,7 @@ class PostViewSet(viewsets.ModelViewSet):
         url_path="comments",
         pagination_class=CommentPagination,
         permission_classes=[permissions.IsAuthenticatedOrReadOnly],
+        filter_backends=[], 
     )
     def comments(self, request, pk=None):
         """List or create comments for the post."""
