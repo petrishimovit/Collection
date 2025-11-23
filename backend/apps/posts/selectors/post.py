@@ -34,7 +34,7 @@ def base_posts_qs():
     """
     return (
         Post.objects
-        .filter(is_deleted=False)  # ← добавлено
+        .filter(is_deleted=False) 
         .select_related("author")
         .annotate(
             _likes_count=Count(
@@ -116,4 +116,13 @@ def search_posts_qs(query: str):
         base_posts_qs()
         .filter(text__icontains=query)
         .order_by("-created_at", "-id")
+    )
+
+def user_posts_qs(author_id):
+    """
+    Return posts authored by the given user id, ordered by creation date.
+    """
+    return (
+        base_posts_qs()
+        .filter(author_id=author_id)
     )

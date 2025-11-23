@@ -93,13 +93,13 @@ class PostCreateSerializer(serializers.ModelSerializer):
         MAX_SIZE = 5 * 1024 * 1024  # 5 MB
 
         if len(files) > MAX_FILES:
-            raise serializers.ValidationError(f"Максимум {MAX_FILES} изображений.")
+            raise serializers.ValidationError(f"Max {MAX_FILES} Images.")
 
         for f in files:
             if f.size > MAX_SIZE:
-                raise serializers.ValidationError(f"{f.name}: файл больше 5MB.")
+                raise serializers.ValidationError(f"{f.name}: file size more than 5 mb")
             if not f.content_type.startswith("image/"):
-                raise serializers.ValidationError(f"{f.name}: не является изображением.")
+                raise serializers.ValidationError(f"{f.name}: is not image")
 
         return files
 
