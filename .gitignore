@@ -126,3 +126,9 @@ dmypy.json
 
 # Media Folder
 media/
+
+
+# Celery-Beat DB
+backend/celerybeat-schedule.db
+
+25.2,

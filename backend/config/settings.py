@@ -34,6 +34,7 @@ THIRD_PARTY_APPS = [
     "drf_spectacular_sidecar",
     "django_celery_beat",
     "corsheaders",
+    "django_filters",
 ]
 
 LOCAL_APPS = [
@@ -53,7 +54,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.AllowAny",
     ],
 }
 
@@ -150,6 +151,7 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Collectioner API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    'COMPONENT_SPLIT_REQUEST': True
 }
 
 

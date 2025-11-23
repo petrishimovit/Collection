@@ -4,15 +4,20 @@ from core.models import BaseModel
 
 
 class Post(BaseModel):
+    """
+    User-created post with optional title and text body.
+    """
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts")
-    title = models.CharField(max_length=200, blank=True)
-    body = models.TextField(blank=True,max_length=400)
+    text = models.CharField(max_length=400, blank=True)
+    views_count = models.PositiveIntegerField(default=0, db_index=True)
+    
+    is_deleted = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-created_at", "-id"]
 
     def __str__(self):
-        return self.title or f"Post #{self.pk}"
+        return self.text or f"Post #{self.pk}"
 
     @property
     def likes_count(self):
