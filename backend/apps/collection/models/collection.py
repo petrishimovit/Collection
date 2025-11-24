@@ -1,6 +1,6 @@
-import uuid
 from django.conf import settings
 from django.db import models
+
 from core.models import BaseModel
 
 
@@ -9,7 +9,17 @@ def collection_image_path(instance, filename):
 
 
 class Collection(BaseModel):
-    """User`s collection"""
+    """User's collection"""
+
+    PRIVACY_PUBLIC = "public"
+    PRIVACY_PRIVATE = "private"
+    PRIVACY_FOLLOWING = "following_only"
+
+    PRIVACY_CHOICES = (
+        (PRIVACY_PUBLIC, "Public"),
+        (PRIVACY_PRIVATE, "Private"),
+        (PRIVACY_FOLLOWING, "Following only"),
+    )
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -17,7 +27,22 @@ class Collection(BaseModel):
         related_name="collections",
     )
     name = models.CharField(max_length=200)
-    image = models.ImageField(upload_to=collection_image_path, blank=True, null=True)
+    description = models.TextField(blank=True)  
+    image = models.ImageField(
+        upload_to=collection_image_path,
+        blank=True,
+        null=True,
+    )
+
+    privacy = models.CharField(          
+        choices=PRIVACY_CHOICES,
+        default=PRIVACY_PUBLIC,
+        db_index=True,
+    )
+
+    views_count = models.PositiveIntegerField(  
+        default=0,
+    )
 
     class Meta:
         ordering = ("name",)

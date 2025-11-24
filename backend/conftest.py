@@ -24,7 +24,7 @@ def user_factory():
 
 @pytest.fixture
 def user(db, user_factory):
-    # один дефолтный юзер для auth_client
+   
     return user_factory()
 
 

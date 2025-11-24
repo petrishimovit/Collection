@@ -1,27 +1,36 @@
 from rest_framework import serializers
-from apps.collection.models import Item
+
+from ..models import Item
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    """Serializer for Collection`s items"""
-
-    items_count = serializers.IntegerField(read_only=True) # items count for pagination
+    """Serializer for collection items"""
 
     class Meta:
         model = Item
         fields = (
             "id",
+            "collection",
             "name",
             "description",
+            "category",
+            "is_private",
+            "quantity",
+            "location",
             "purchase_date",
             "purchase_price",
             "current_value",
+            "currency",
             "extra",
-            "items_count",
             "images",
-            "collection",
-            "pricecharting"
-            
-           
+            "pricecharting",
+            "created_at",
+            "updated_at",
         )
-        read_only_fields = ("id", "created_at", "updated_at","items_count","images","pricecharting")
+        read_only_fields = (
+            "id",
+            "created_at",
+            "updated_at",
+            "images",
+            "pricecharting",
+        )
