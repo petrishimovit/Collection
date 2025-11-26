@@ -51,7 +51,7 @@ class Item(BaseModel):
     )
 
     privacy = models.CharField(
-        max_length=32,
+        max_length=32,                      
         choices=PRIVACY_CHOICES,
         default=PRIVACY_PUBLIC,
         db_index=True,
@@ -103,3 +103,21 @@ class Item(BaseModel):
 
     def __str__(self):
         return self.name
+
+
+class ItemImage(BaseModel):
+    """Image for item."""
+
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
+    image = models.ImageField(upload_to=item_image_path)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ("order", "created_at")
+
+    def __str__(self):
+        return f"Image for {self.item.name}"

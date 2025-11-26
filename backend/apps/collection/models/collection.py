@@ -34,7 +34,8 @@ class Collection(BaseModel):
         null=True,
     )
 
-    privacy = models.CharField(          
+    privacy = models.CharField(
+        max_length=32,                      
         choices=PRIVACY_CHOICES,
         default=PRIVACY_PUBLIC,
         db_index=True,

@@ -7,6 +7,16 @@ class CollectionSerializer(serializers.ModelSerializer):
     """Serializer for collections."""
 
     items_count = serializers.IntegerField(read_only=True)
+    total_current_value = serializers.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        read_only=True,
+    )
+    total_purchase_price = serializers.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        read_only=True,
+    )
 
     class Meta:
         model = Collection
@@ -18,10 +28,11 @@ class CollectionSerializer(serializers.ModelSerializer):
             "privacy",
             "views_count",
             "items_count",
+            "total_current_value",
+            "total_purchase_price",
             "created_at",
             "updated_at",
             "owner",
-            "items",
         )
         read_only_fields = (
             "id",
@@ -30,5 +41,7 @@ class CollectionSerializer(serializers.ModelSerializer):
             "owner",
             "views_count",
             "items_count",
+            "total_current_value",
+            "total_purchase_price",
             "items",
         )
