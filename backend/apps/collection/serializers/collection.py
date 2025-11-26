@@ -1,11 +1,10 @@
 from rest_framework import serializers
 
-from ..models import Collection
+from apps.collection.models import Collection
 
 
 class CollectionSerializer(serializers.ModelSerializer):
-    """Serializer for Collection"""
-
+    """Serializer for collections."""
 
     items_count = serializers.IntegerField(read_only=True)
 

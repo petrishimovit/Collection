@@ -11,6 +11,16 @@ def item_image_path(instance, filename):
 class Item(BaseModel):
     """Item in Collection"""
 
+    PRIVACY_PUBLIC = "public"
+    PRIVACY_PRIVATE = "private"
+    PRIVACY_FOLLOWING = "following_only"
+
+    PRIVACY_CHOICES = (
+        (PRIVACY_PUBLIC, "Public"),
+        (PRIVACY_PRIVATE, "Private"),
+        (PRIVACY_FOLLOWING, "Following only"),
+    )
+
     collection = models.ForeignKey(
         Collection,
         on_delete=models.CASCADE,
@@ -33,7 +43,6 @@ class Item(BaseModel):
         blank=True,
     )
 
-
     category = models.CharField(
         max_length=50,
         null=True,
@@ -41,9 +50,10 @@ class Item(BaseModel):
         db_index=True,
     )
 
- 
-    is_private = models.BooleanField(
-        default=False,
+    privacy = models.CharField(
+        max_length=32,
+        choices=PRIVACY_CHOICES,
+        default=PRIVACY_PUBLIC,
         db_index=True,
     )
 
