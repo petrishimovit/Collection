@@ -6,12 +6,12 @@ from apps.accounts.models import User
 pytestmark = pytest.mark.django_db
 
 
-def test_user_register_and_login_with_jwt(api_client):
+def test_user_register_and_cannot_login_while_inactive(api_client):
     # Arrange
     email = "user@example.com"
     password = "stringst"
 
-    # Act: register
+    # Act
     register_response = api_client.post(
         "/auth/register/",
         {
@@ -22,31 +22,23 @@ def test_user_register_and_login_with_jwt(api_client):
         format="json",
     )
 
-    # Assert: registration ok
+    # Assert
     assert register_response.status_code in (200, 201), register_response.content
     assert User.objects.filter(email=email).exists()
 
-    # Act: obtain token
+    user = User.objects.get(email=email)
+    
+    assert user.is_active is False
+
+    # Act
     token_response = api_client.post(
         "/auth/token/",
         {"email": email, "password": password},
         format="json",
     )
 
-    # Assert: tokens issued
-    assert token_response.status_code == 200, token_response.content
-    assert "access" in token_response.data
-    assert "refresh" in token_response.data
-
-    access = token_response.data["access"]
-
-    # Act: call /users/me/
-    me_response = api_client.get(
-        "/users/me/",
-        HTTP_AUTHORIZATION=f"Bearer {access}",
-    )
-
-    # Assert: user data correct
-    assert me_response.status_code == 200
-    assert me_response.data["display_name"] == "TestUser"
+    # Assert
+    assert token_response.status_code == 401
     
+    assert token_response.data["detail"] == "No active account found with the given credentials"
+    assert getattr(token_response.data["detail"], "code", None) == "no_active_account"

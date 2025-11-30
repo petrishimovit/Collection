@@ -1,10 +1,12 @@
 from rest_framework import serializers
-
+from .mixins import HiddenFieldsMixin
 from apps.collection.models import Item, Collection
 
 
-class ItemSerializer(serializers.ModelSerializer):
+class ItemSerializer(HiddenFieldsMixin,serializers.ModelSerializer):
     """Serializer for collection items."""
+
+    owner_path = "collection.owner"
 
     class Meta:
         model = Item
@@ -26,6 +28,7 @@ class ItemSerializer(serializers.ModelSerializer):
             "pricecharting",
             "created_at",
             "updated_at",
+            "hidden_fields"
         )
         read_only_fields = (
             "id",

@@ -108,8 +108,9 @@ class ItemViewSet(viewsets.ModelViewSet):
 
     queryset = Item.objects.all().select_related("collection", "collection__owner")
 
+    
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-
+    
     def get_queryset(self):
         qs = get_items_for_user(self.request.user)
 
@@ -151,8 +152,7 @@ class ItemViewSet(viewsets.ModelViewSet):
 
         serializer.save()
 
-    def update(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
 
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)

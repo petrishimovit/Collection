@@ -98,6 +98,11 @@ class Item(BaseModel):
         blank=True,
     )
 
+    hidden_fields = models.JSONField(
+    default=list,
+    blank=True,
+    )
+
     class Meta:
         ordering = ("name",)
 
