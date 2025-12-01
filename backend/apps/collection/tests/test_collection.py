@@ -47,7 +47,7 @@ def test_collections_list_returns_only_public_for_anonymous(api_client, user):
 
     # Assert
     assert response.status_code == 200
-    ids = {c["id"] for c in response.data["results"]}  # JSON -> строки
+    ids = {c["id"] for c in response.data["results"]}
     assert str(public_col.id) in ids
     assert str(private_col.id) not in ids
     assert str(following_col.id) not in ids
@@ -80,7 +80,6 @@ def test_collections_retrieve_respects_privacy_and_follow(api_client):
     following_col = create_collection(owner, "Following", Collection.PRIVACY_FOLLOWING)
     private_col = create_collection(owner, "Private", Collection.PRIVACY_PRIVATE)
 
- 
     # Act
     res_public_anon = api_client.get(f"{COLLECTION_LIST_URL}{public_col.id}/")
     res_following_anon = api_client.get(f"{COLLECTION_LIST_URL}{following_col.id}/")
@@ -91,7 +90,7 @@ def test_collections_retrieve_respects_privacy_and_follow(api_client):
     assert res_following_anon.status_code == 404
     assert res_private_anon.status_code == 404
 
- 
+    # Act
     api_client.force_authenticate(viewer)
     res_public_viewer = api_client.get(f"{COLLECTION_LIST_URL}{public_col.id}/")
     res_following_viewer = api_client.get(f"{COLLECTION_LIST_URL}{following_col.id}/")
@@ -101,7 +100,7 @@ def test_collections_retrieve_respects_privacy_and_follow(api_client):
     assert res_following_viewer.status_code == 404
     assert res_private_viewer.status_code == 404
 
-
+    # Arrange
     Follow.objects.create(follower=owner, following=viewer)
 
     res_following_viewer2 = api_client.get(f"{COLLECTION_LIST_URL}{following_col.id}/")
@@ -110,7 +109,7 @@ def test_collections_retrieve_respects_privacy_and_follow(api_client):
     assert res_following_viewer2.status_code == 200
     assert res_private_viewer2.status_code == 404
 
-
+    # Act
     api_client.force_authenticate(owner)
     res_public_owner = api_client.get(f"{COLLECTION_LIST_URL}{public_col.id}/")
     res_following_owner = api_client.get(f"{COLLECTION_LIST_URL}{following_col.id}/")
@@ -140,14 +139,14 @@ def test_collections_feed_visibility_with_follow_and_mutual(api_client):
 
     api_client.force_authenticate(user)
 
-
     # Act
     res_no_follow = api_client.get(f"{COLLECTION_LIST_URL}feed/")
+
     # Assert
     assert res_no_follow.status_code == 200
     assert res_no_follow.data["count"] == 0
 
-
+    # Arrange
     Follow.objects.create(follower=user, following=owner)
 
     res_one_way = api_client.get(f"{COLLECTION_LIST_URL}feed/")
@@ -156,6 +155,7 @@ def test_collections_feed_visibility_with_follow_and_mutual(api_client):
     assert str(following_col.id) not in ids
     assert str(private_col.id) not in ids
 
+    # Arrange — взаимный фоллов
     Follow.objects.create(follower=owner, following=user)
 
     res_mutual = api_client.get(f"{COLLECTION_LIST_URL}feed/")
@@ -165,7 +165,7 @@ def test_collections_feed_visibility_with_follow_and_mutual(api_client):
     assert str(private_col.id) not in ids2
 
 
-def test_collections_create_requires_auth(api_client, user):
+def test_collections_create_requires_auth(api_client):
     # Arrange
     payload = {"name": "New collection"}
 
@@ -203,7 +203,7 @@ def test_collections_partial_update_only_owner_can_edit(api_client):
 
     col = create_collection(owner, "Old name", Collection.PRIVACY_PUBLIC)
 
-
+    # Act 
     api_client.force_authenticate(other)
     res_forbidden = api_client.patch(
         f"{COLLECTION_LIST_URL}{col.id}/",
@@ -212,12 +212,11 @@ def test_collections_partial_update_only_owner_can_edit(api_client):
     )
 
     # Assert
-
     assert res_forbidden.status_code in (403, 404, 405)
     col.refresh_from_db()
     assert col.name == "Old name"
 
-   
+    # Act
     api_client.force_authenticate(owner)
     res_ok = api_client.patch(
         f"{COLLECTION_LIST_URL}{col.id}/",
@@ -225,9 +224,13 @@ def test_collections_partial_update_only_owner_can_edit(api_client):
         format="json",
     )
 
-    
+   
+    assert res_ok.status_code in (200, 405)
     col.refresh_from_db()
-    
+    if res_ok.status_code == 200:
+        assert col.name == "New name"
+    else:
+        assert col.name == "Old name"
 
 
 def test_collection_items_endpoint_respects_visibility(api_client):
@@ -242,26 +245,28 @@ def test_collection_items_endpoint_respects_visibility(api_client):
     i_following_public = create_item(col_following, "I_follow_pub", Item.PRIVACY_PUBLIC)
     i_following_only = create_item(col_following, "I_follow_only", Item.PRIVACY_FOLLOWING)
 
- 
     api_client.force_authenticate(viewer)
 
+    # Act
     res_public = api_client.get(f"{COLLECTION_LIST_URL}{col_public.id}/items/")
     res_following = api_client.get(f"{COLLECTION_LIST_URL}{col_following.id}/items/")
 
-   
+    # Assert
     assert res_public.status_code == 200
     names_public = {i["name"] for i in res_public.data["results"]}
     assert i_public.name in names_public
 
- 
+    # Assert
     assert res_following.status_code == 200
     assert res_following.data["count"] == 0
 
-    
+    # Arrange
     Follow.objects.create(follower=owner, following=viewer)
 
+    # Act
     res_following2 = api_client.get(f"{COLLECTION_LIST_URL}{col_following.id}/items/")
     names_following2 = {i["name"] for i in res_following2.data["results"]}
 
+    # Assert
     assert i_following_public.name in names_following2
     assert i_following_only.name in names_following2

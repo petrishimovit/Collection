@@ -18,20 +18,30 @@ def create_user(email: str, display_name: str):
     )
 
 
-def create_collection(owner, name="My collection", privacy=Collection.PRIVACY_PUBLIC):
-    return Collection.objects.create(
-        owner=owner,
-        name=name,
-        privacy=privacy,
-    )
+def create_collection(owner, name="My collection", privacy=Collection.PRIVACY_PUBLIC, **kwargs):
+    
+    defaults = {
+        "description": "Test collection",
+        "privacy": privacy,
+    }
+    defaults.update(kwargs)
+    return Collection.objects.create(owner=owner, name=name, **defaults)
 
 
-def create_item(collection, name="My item", privacy=Item.PRIVACY_PUBLIC):
-    return Item.objects.create(
-        collection=collection,
-        name=name,
-        privacy=privacy,
-    )
+def create_item(collection, name="My item", privacy=Item.PRIVACY_PUBLIC, **kwargs):
+    
+  
+    defaults = {
+        "description": "Test item",
+        "privacy": privacy,
+        "purchase_price": 100,
+        "current_value": 150,
+        "currency": "USD",
+        "extra": {"secret_tag": "SECRET", "visible_tag": "VISIBLE"},
+        "hidden_fields": ["purchase_price", "current_value", "secret_tag"],
+    }
+    defaults.update(kwargs)
+    return Item.objects.create(collection=collection, name=name, **defaults)
 
 
 def test_item_list_anonymous_sees_only_public_items_in_public_collections(api_client, user):
@@ -58,7 +68,7 @@ def test_item_list_anonymous_sees_only_public_items_in_public_collections(api_cl
 
 
 def test_item_create_requires_auth(api_client, user):
-  
+    # Arrange
     col = create_collection(user, "C1")
     payload = {"collection": col.id, "name": "New item"}
 
@@ -163,18 +173,24 @@ def test_item_list_respects_following_collection_visibility(api_client):
     i_private = create_item(col_following, "I_private", Item.PRIVACY_PRIVATE)
 
     api_client.force_authenticate(viewer)
+
+    # Act
     res_no_follow = api_client.get(ITEM_LIST_URL)
     names_no_follow = {i["name"] for i in res_no_follow.data["results"]}
+
+    # Assert
     assert i_public.name not in names_no_follow
     assert i_following.name not in names_no_follow
     assert i_private.name not in names_no_follow
 
-
+    # Arrange
     Follow.objects.create(follower=owner, following=viewer)
 
+    # Act
     res_followed = api_client.get(ITEM_LIST_URL)
     names_followed = {i["name"] for i in res_followed.data["results"]}
 
+    # Assert
     assert i_public.name in names_followed
     assert i_following.name in names_followed
     assert i_private.name not in names_followed
@@ -194,3 +210,110 @@ def test_item_search_filters_by_name(api_client, user):
     names = {i["name"] for i in response.data["results"]}
     assert "Super Mario" in names
     assert "Zelda" not in names
+
+
+def test_item_hidden_fields_visible_for_owner(auth_client, user):
+   
+    col = create_collection(user, "C1")
+    item = create_item(col, "I1")
+
+    url = f"/items/{item.id}/"
+    response = auth_client.get(url)
+
+    assert response.status_code == 200
+
+    data = response.data
+
+   
+    assert "hidden_fields" in data
+    assert set(data["hidden_fields"]) == {
+        "purchase_price",
+        "current_value",
+        "secret_tag",
+    }
+
+  
+    assert str(data["purchase_price"]) in ("100", "100.00")
+    assert str(data["current_value"]) in ("150", "150.00")
+
+    extra = data["extra"]
+    assert extra["secret_tag"] == "SECRET"
+    assert extra["visible_tag"] == "VISIBLE"
+
+
+def test_item_hidden_fields_masked_for_anonymous(api_client, user):
+   
+    col = create_collection(user, "C1")
+    item = create_item(col, "I1")
+
+    url = f"/items/{item.id}/"
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    data = response.data
+
+ 
+    assert "hidden_fields" not in data
+
+
+    assert data.get("purchase_price") is None
+    assert data.get("current_value") is None
+
+    extra = data["extra"]
+    
+    assert "visible_tag" in extra
+    assert "secret_tag" in extra
+
+
+def test_item_hidden_fields_masked_for_non_owner(auth_client, user, api_client):
+    
+    owner = user
+    other = get_user_model().objects.create_user(
+        email="other@example.com",
+        display_name="Other",
+        password="12345",
+    )
+
+    col = create_collection(owner, "C1")
+    item = create_item(col, "I1")
+
+    api_client.force_authenticate(user=other)
+
+    url = f"/items/{item.id}/"
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    data = response.data
+
+    assert "hidden_fields" not in data
+    assert data.get("purchase_price") is None
+    assert data.get("current_value") is None
+
+    extra = data["extra"]
+    assert "visible_tag" in extra
+   
+    assert "secret_tag" in extra
+
+
+def test_item_hidden_fields_can_be_cleared_with_patch(auth_client, user):
+   
+    col = create_collection(user, "C1")
+    item = create_item(col, "I1")
+
+    url = f"/items/{item.id}/"
+    payload = {"hidden_fields": []}
+    response = auth_client.patch(url, payload, format="json")
+
+    assert response.status_code == 200
+    assert response.data["hidden_fields"] == []
+
+    
+    from rest_framework.test import APIClient
+
+    anon_client = APIClient()
+    response_anon = anon_client.get(url)
+    assert response_anon.status_code == 200
+
+    data = response_anon.data
+
+    assert "hidden_fields" not in data
