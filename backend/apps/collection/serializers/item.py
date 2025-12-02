@@ -12,7 +12,6 @@ class ItemSerializer(HiddenFieldsMixin,serializers.ModelSerializer):
         model = Item
         fields = (
             "id",
-            "collection",
             "name",
             "description",
             "category",
@@ -24,19 +23,13 @@ class ItemSerializer(HiddenFieldsMixin,serializers.ModelSerializer):
             "current_value",
             "currency",
             "extra",
-            "images",
+            "hidden_fields",
+            "collection",
             "pricecharting",
             "created_at",
             "updated_at",
-            "hidden_fields"
         )
-        read_only_fields = (
-            "id",
-            "created_at",
-            "updated_at",
-            "images",
-            "pricecharting",
-        )
+        read_only_fields = ("id", "created_at", "updated_at","pricecharting")
 
     def validate(self, attrs):
         """
