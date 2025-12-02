@@ -1,7 +1,18 @@
 from django.contrib import admin
-from django.utils.html import format_html
+from core.admin import BaseAdmin
 from .models import Collection, Item, ItemImage
 
-admin.register(Collection)
-admin.register(Item)
-admin.register(ItemImage)
+
+@admin.register(Collection)
+class CollectionAdmin(BaseAdmin):
+    pass
+
+
+@admin.register(Item)
+class ItemAdmin(BaseAdmin):
+    pass
+
+
+@admin.register(ItemImage)
+class ItemImageAdmin(BaseAdmin):
+    pass

@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from django.db import transaction
 from django.contrib.auth import get_user_model
 
+
+
 User = get_user_model()
 
 
@@ -56,9 +58,42 @@ class UserService:
 
     @staticmethod
     @transaction.atomic
-    def deactivate_self(*, user: User):
+    def change_active(*, user: User, is_active: bool) -> None:
+        
         """
-        Deactivate the given user account.
+        Universal method to soft-activate or soft-deactivate a user
+        and all related BaseModel entities.
         """
-        user.is_active = False
-        user.save()
+
+        from apps.collection.models import Collection , Item ,ItemImage
+        from apps.accounts.models import Profile,Follow
+        from apps.posts.models import Post,Comment,PostReaction,CommentReaction
+
+        
+        user.is_active = is_active
+        user.save(update_fields=["is_active"])
+
+        Profile.all_objects.filter(user=user).update(is_active=is_active)
+
+        Follow.all_objects.filter(follower=user).update(is_active=is_active)
+        Follow.all_objects.filter(following=user).update(is_active=is_active)
+
+        Collection.all_objects.filter(owner=user).update(is_active=is_active)
+        Item.all_objects.filter(collection__owner=user).update(is_active=is_active)
+        ItemImage.all_objects.filter(item__collection__owner=user).update(is_active=is_active)
+
+     
+        Post.all_objects.filter(author=user).update(is_active=is_active)
+        Comment.all_objects.filter(author=user).update(is_active=is_active)
+        PostReaction.all_objects.filter(user=user).update(is_active=is_active)
+        CommentReaction.all_objects.filter(user=user).update(is_active=is_active)
+
+    @staticmethod
+    def deactivate_self(*, user: User) -> None:
+        return UserService.change_active(user=user, is_active=False)
+
+    @staticmethod
+    def reactivate_self(*, user: User) -> None:
+        return UserService.change_active(user=user, is_active=True)
+
+

@@ -1,157 +1,363 @@
-from typing import Type
-from django.db.models import Count, QuerySet
-from rest_framework import viewsets, permissions
-from rest_framework.permissions import BasePermission
-from rest_framework.response import Response
-from rest_framework.serializers import Serializer
+from django.db import models
+from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.filters import OrderingFilter
+from rest_framework.response import Response
+
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+)
+from drf_spectacular.types import OpenApiTypes
 
 from apps.collection.models import Collection
 from apps.collection.serializers.collection import CollectionSerializer
-from apps.collection.pagination import DefaultPageNumberPagination
+from apps.collection.serializers.item import ItemSerializer
 from apps.collection.permissions.collection import IsCollectionOwnerOrReadOnly
+from apps.collection.selectors.collection import (
+    get_public_collections,
+    get_collections_for_user,
+    get_user_collections,
+    get_collection_for_user,
+    get_feed_collections_for_user,
+)
+from apps.collection.selectors.item import get_collection_items_for_user
+from apps.collection.pagination import DefaultPageNumberPagination
 
-
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 
 @extend_schema_view(
     list=extend_schema(
         summary="List public collections",
-        description="Return all public collections with item counts.",
+        description=(
+            "Return a paginated list of **public** collections ordered by creation date or "
+            "aggregate values.\n\n"
+            "This endpoint is an explore/discover view and does not include private or "
+            "following-only collections."
+        ),
         responses={200: CollectionSerializer},
+        tags=["Collections"],
+        parameters=[
+            OpenApiParameter(
+                name="ordering",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Sort collections by one of:\n\n"
+                    "- `created_at`, `-created_at`\n"
+                    "- `items_count`, `-items_count`\n"
+                    "- `total_current_value`, `-total_current_value`\n"
+                    "- `total_purchase_price`, `-total_purchase_price`"
+                ),
+            ),
+        ],
     ),
     retrieve=extend_schema(
         summary="Retrieve a collection",
-        description="Get detailed info about a specific public collection.",
-        responses={200: CollectionSerializer, 404: OpenApiResponse(description="Not found")},
+        description=(
+            "Return a single collection by ID.\n\n"
+            "Visibility rules:\n"
+            "- Public collections are visible to everyone.\n"
+            "- Following-only collections are visible to users that the owner follows.\n"
+            "- Private collections are only visible to their owner."
+        ),
+        responses={200: CollectionSerializer},
+        tags=["Collections"],
     ),
     create=extend_schema(
         summary="Create a collection",
-        description="Create a new collection owned by the authenticated user.",
-        responses={201: CollectionSerializer, 403: OpenApiResponse(description="Authentication required")},
-    ),
-    update=extend_schema(
-        summary="Update a collection",
-        description="Update collection data. Owner only.",
-        responses={200: CollectionSerializer, 403: OpenApiResponse(description="Forbidden")},
-    ),
-    partial_update=extend_schema(
-        summary="Partially update a collection",
-        description="Partially update collection fields. Owner only.",
-        responses={200: CollectionSerializer, 403: OpenApiResponse(description="Forbidden")},
+        description=(
+            "Create a new collection for the authenticated user.\n\n"
+            "The `owner` field is set automatically to the current user."
+        ),
+        request=CollectionSerializer,
+        responses={201: CollectionSerializer},
+        tags=["Collections"],
     ),
     destroy=extend_schema(
         summary="Delete a collection",
-        description="Delete a collection. Owner only.",
-        responses={204: OpenApiResponse(description="Deleted"), 403: OpenApiResponse(description="Forbidden")},
+        description="Delete a collection owned by the authenticated user.",
+        tags=["Collections"],
+    ),
+    partial_update=extend_schema(
+        summary="Update collection (partial)",
+        description=(
+            "Partially update a collection. Only the owner of the collection can update it.\n\n"
+            "Full `PUT` updates are not allowed on this endpoint."
+        ),
+        request=CollectionSerializer,
+        responses={200: CollectionSerializer},
+        tags=["Collections"],
     ),
 )
 class CollectionViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing user collections.
+    Collections CRUD and extra actions:
+    - list public collections
+    - retrieve with visibility rules
+    - user-owned collections
+    - collections feed from followed users
+    - search
+    - list/create items in a collection
     """
 
-    serializer_class: Type[Serializer] = CollectionSerializer
+    serializer_class = CollectionSerializer
+    permission_classes = (IsCollectionOwnerOrReadOnly,)
     pagination_class = DefaultPageNumberPagination
-    permission_classes = [IsCollectionOwnerOrReadOnly]
+    filter_backends = (OrderingFilter,)
+    ordering_fields = (
+        "created_at",
+        "items_count",
+        "total_current_value",
+        "total_purchase_price",
+    )
+    ordering = ("-created_at",)
 
+    queryset = Collection.objects.all().select_related("owner")
 
-    def get_public_queryset(self) -> QuerySet[Collection]:
-        """
-        Return a queryset of all collections available for public read operations.
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
-        The queryset is annotated with an `items_count` field and includes
-        related owners and items for efficiency.
+    def get_queryset(self):
+        if self.action == "list":
+            return get_public_collections()
+        return get_collections_for_user(self.request.user)
 
-        Returns:
-            QuerySet[Collection]: A queryset containing all public collections.
-        """
-        return (
-            Collection.objects
-            .select_related("owner")
-            .prefetch_related("items")
-            .annotate(items_count=Count("items", distinct=True))
-            .order_by("name", "id")
+    def list(self, request, *args, **kwargs):
+        queryset = get_public_collections()
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        collection_id = kwargs.get("pk")
+        instance = get_collection_for_user(request.user, collection_id)
+        if instance is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        Collection.objects.filter(pk=instance.pk).update(
+            views_count=models.F("views_count") + 1
         )
+        instance.refresh_from_db(fields=["views_count"])
 
-    def get_private_queryset(self) -> QuerySet[Collection]:
-        """
-        Return a queryset of collections owned by the authenticated user.
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
-        Used for private operations and the `/me` endpoint.
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
-        Returns:
-            QuerySet[Collection]: A queryset containing collections
-                                  owned by the current user.
-        """
-        if not self.request.user.is_authenticated:
-            return Collection.objects.none()
-        return (
-            Collection.objects
-            .filter(owner=self.request.user)
-            .annotate(items_count=Count("items", distinct=True))
-            .order_by("name", "id")
-        )
+    def update(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def get_queryset(self) -> QuerySet[Collection]:
-        """
-        Determine which queryset to use based on the current action.
-
-        - For read actions (`list`, `retrieve`), returns the public queryset.
-        - For write actions, returns only collections belonging to the current user.
-
-        Returns:
-            QuerySet[Collection]: The appropriate queryset for the action.
-        """
-        if self.action in ("list", "retrieve"):
-            return self.get_public_queryset()
-        return self.get_private_queryset()
-
-    def get_permissions(self) -> list[BasePermission]:
-        """
-        Return permission instances depending on the current action.
-
-        - Public read actions (`list`, `retrieve`) are open to everyone.
-        - Write actions require authentication and ownership verification.
-        """
-        if self.action in ("list", "retrieve"):
-            return [permissions.AllowAny()]
-        return [perm() for perm in self.permission_classes]
-
-    def perform_create(self, serializer) -> None:
-        """
-        Assign the authenticated user as the owner when creating a new collection.
-
-        Raises:
-            PermissionDenied: If the user is not authenticated.
-        """
-        user = self.request.user
-        if not user or not user.is_authenticated:
-            raise PermissionDenied("Authentication required.")
-        serializer.save(owner=user)
-
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
 
     @extend_schema(
         summary="List my collections",
-        description="Return collections owned by the authenticated user.",
-        responses={200: CollectionSerializer(many=True)},
+        description="Return a paginated list of collections owned by the authenticated user.",
+        responses={200: CollectionSerializer},
+        tags=["Collections"],
+        parameters=[
+            OpenApiParameter(
+                name="ordering",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Sort collections by one of:\n\n"
+                    "- `created_at`, `-created_at`\n"
+                    "- `items_count`, `-items_count`\n"
+                    "- `total_current_value`, `-total_current_value`\n"
+                    "- `total_purchase_price`, `-total_purchase_price`"
+                ),
+            ),
+        ],
     )
     @action(
         detail=False,
         methods=["get"],
-        url_path="me",
-        pagination_class=DefaultPageNumberPagination,
+        url_path="my",
         permission_classes=[permissions.IsAuthenticated],
     )
-    def me(self, request) -> Response:
-        """
-        Retrieve only collections belonging to the authenticated user.
-        """
-        qs = self.get_private_queryset()
+    def my(self, request, *args, **kwargs):
+        qs = get_user_collections(request.user)
+        qs = self.filter_queryset(qs)
+
         page = self.paginate_queryset(qs)
         if page is not None:
-            ser = self.get_serializer(page, many=True)
-            return self.get_paginated_response(ser.data)
-        ser = self.get_serializer(qs, many=True)
-        return Response(ser.data)
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="Collections feed",
+        description=(
+            "Return a feed of collections from users the authenticated user follows.\n\n"
+            "Visibility rules:\n"
+            "- Public collections of followed users are always included.\n"
+            "- Following-only collections are included only if the follow is mutual.\n"
+            "- Private collections are never included."
+        ),
+        responses={200: CollectionSerializer},
+        tags=["Collections"],
+        parameters=[
+            OpenApiParameter(
+                name="ordering",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Sort collections by one of:\n\n"
+                    "- `created_at`, `-created_at`\n"
+                    "- `items_count`, `-items_count`\n"
+                    "- `total_current_value`, `-total_current_value`\n"
+                    "- `total_purchase_price`, `-total_purchase_price`"
+                ),
+            ),
+        ],
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="feed",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def feed(self, request, *args, **kwargs):
+        qs = get_feed_collections_for_user(request.user)
+        qs = self.filter_queryset(qs)
+
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="Search collections",
+        description=(
+            "Search collections visible to the current user by name or description.\n\n"
+            "Search respects collection privacy and follow rules."
+        ),
+        tags=["Collections"],
+        parameters=[
+            OpenApiParameter(
+                name="q",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Case-insensitive search query for collection name or description.",
+            ),
+            OpenApiParameter(
+                name="ordering",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Sort collections by one of:\n\n"
+                    "- `created_at`, `-created_at`\n"
+                    "- `items_count`, `-items_count`\n"
+                    "- `total_current_value`, `-total_current_value`\n"
+                    "- `total_purchase_price`, `-total_purchase_price`"
+                ),
+            ),
+        ],
+        responses={200: CollectionSerializer},
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="search",
+    )
+    def search(self, request, *args, **kwargs):
+        q = request.query_params.get("q", "").strip()
+        qs = get_collections_for_user(request.user)
+
+        if q:
+            qs = qs.filter(
+                models.Q(name__icontains=q)
+                | models.Q(description__icontains=q)
+            )
+
+        qs = self.filter_queryset(qs)
+
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(qs, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="List or create items in a collection",
+        description=(
+            "GET: list items in the collection that are visible to the current user.\n\n"
+            "POST: create a new item in this collection (owner only)."
+        ),
+        request={
+            "POST": ItemSerializer,
+        },
+        responses={
+            200: ItemSerializer(many=True),
+            201: ItemSerializer,
+        },
+        tags=["Collections"],
+        parameters=[
+            OpenApiParameter(
+                name="ordering",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description=(
+                    "Optional ordering for items in the collection, e.g.:\n\n"
+                    "- `created_at`, `-created_at`\n"
+                    "- `current_value`, `-current_value`"
+                ),
+            ),
+        ],
+    )
+    @action(detail=True, methods=["get", "post"], url_path="items")
+    def items(self, request, pk=None, *args, **kwargs):
+        collection_id = pk
+
+        if request.method.lower() == "get":
+            qs = get_collection_items_for_user(request.user, collection_id)
+            ordering = request.query_params.get("ordering")
+            if ordering:
+                qs = qs.order_by(ordering)
+
+            page = self.paginate_queryset(qs)
+            if page is not None:
+                serializer = ItemSerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = ItemSerializer(qs, many=True)
+            return Response(serializer.data)
+
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        from apps.collection.models import Collection as CollectionModel
+
+        try:
+            collection = CollectionModel.objects.get(pk=collection_id)
+        except CollectionModel.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if collection.owner != request.user:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data.copy()
+        data["collection"] = collection_id
+
+        serializer = ItemSerializer(data=data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
