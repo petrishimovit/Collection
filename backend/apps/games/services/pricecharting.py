@@ -1,42 +1,54 @@
 # apps/games/services/pricecharting.py
 from __future__ import annotations
-from urllib.parse import urlparse
-from typing import List, Optional
+
 from dataclasses import asdict
+from typing import List, Optional
+
 from django.db import transaction
 from django.db.models import Count
 from django.utils import timezone
 
-from ..integrations.pricecharting.client import PricechartingClient
-from ..integrations.pricecharting.schemas import SearchItem
-from ..integrations.pricecharting.types import Region
-from ..models import PriceChartingConnect
+from apps.games.integrations.pricecharting import PricechartingClient, SearchItem, Region
+from apps.games.models import PriceChartingConnect, normalize_url
 
 
 class PricechartingService:
-
-    @staticmethod
-    def _norm_url(url: str) -> str:
-        
-        p = urlparse((url or "").strip())
-        if not p.scheme or not p.netloc:
-            return ""
-        return f"{p.scheme}://{p.netloc}{p.path}".rstrip("/")
-
-  
+    """
+    service for working with pricecharting integration.
+    """
 
     @classmethod
-    def search_items(cls, *, q: str, region: Region = "all", limit: int = 10) -> List[dict]:
-        
-        items: List[SearchItem] = PricechartingClient.search(q=q, region=region, limit=limit)
+    def search_items(
+        cls,
+        *,
+        q: str,
+        region: Region = "all",
+        limit: int = 10,
+    ) -> List[dict]:
+        """
+        search items on pricecharting and return list of plain dicts.
+        """
+        items: List[SearchItem] = PricechartingClient.search(
+            q=q,
+            region=region,
+            limit=limit,
+        )
         return [asdict(i) for i in items]
 
     @classmethod
-    def get_item_details(cls, *, url: Optional[str] = None, slug: Optional[str] = None) -> dict:
-        
+    def get_item_details(
+        cls,
+        *,
+        url: Optional[str] = None,
+        slug: Optional[str] = None,
+    ) -> dict:
+        """
+        fetch detailed info for a single pricecharting item.
+        """
         token = url or slug or ""
         if not token:
             return {}
+
         data = PricechartingClient.item_details(token)
         return {
             "title": data.get("title", ""),
@@ -47,11 +59,14 @@ class PricechartingService:
             "prices": data.get("prices") or {},
         }
 
+
     @classmethod
     @transaction.atomic
     def upsert_connect(cls, *, url: str) -> Optional[PriceChartingConnect]:
-        
-        norm = cls._norm_url(url)
+        """
+        ensure there is a pricechartingconnect for the given URL.
+        """
+        norm = normalize_url(url)
         if not norm:
             return None
 
@@ -66,46 +81,61 @@ class PricechartingService:
     @classmethod
     @transaction.atomic
     def bind_item(cls, *, item, url: str) -> Optional[PriceChartingConnect]:
-        
+        """
+        bind a collection Item instance to a pricechartingconnect.
+        """
         obj = cls.upsert_connect(url=url)
         if not obj:
             return None
+
         if item.pricecharting_id != obj.id:
             item.pricecharting = obj
             item.save(update_fields=["pricecharting"])
         return obj
 
     @staticmethod
-    def unbind_item(item):
-        
+    def unbind_item(item) -> None:
+        """
+        remove pricecharting binding from a collection Item.
+        """
         item.pricecharting = None
         item.save(update_fields=["pricecharting"])
 
     @staticmethod
     def public_qs():
-        
+        """
+        base queryset for public pricechartingconnect list endpoints.
+        """
         return (
-            PriceChartingConnect.objects
-            .annotate(items_count=Count("items"))
+            PriceChartingConnect.objects.annotate(items_count=Count("items"))
             .order_by("-created_at")
             .distinct()
         )
-    
+
+ 
 
     @classmethod
     @transaction.atomic
-    def snapshot_prices(cls, *, connect: PriceChartingConnect, token: Optional[str] = None) -> dict:
-        
+    def snapshot_prices(
+        cls,
+        *,
+        connect: PriceChartingConnect,
+        token: Optional[str] = None,
+    ) -> dict:
+        """
+        fetch current prices for a connect and append them to history.
+        """
         token = token or connect.url or (connect.current or {}).get("slug") or ""
         if not token:
             return {}
 
         data = PricechartingClient.item_details(token)
         prices = data.get("prices") or {}
-        now = timezone.now()
-        date_key = now.date().isoformat()  # "YYYY-MM-DD"
 
-        
+        now = timezone.now()
+        date_key = now.date().isoformat()  
+
+     
         connect.current = {
             "title": data.get("title", ""),
             "platform": data.get("platform", ""),
@@ -116,25 +146,26 @@ class PricechartingService:
         }
         connect.last_synced_at = now
 
-        
+    
         hist = connect.history or {}
         if isinstance(hist, list):
-            
             migrated = {}
             for i, entry in enumerate(hist, start=1):
                 if isinstance(entry, dict):
-                 
                     at = entry.get("at") or entry.get("date")
                     p = entry.get("prices") or {}
-                    key = (at[:10] if isinstance(at, str) and len(at) >= 10 else f"_old_{i}")
+                    key = (
+                        at[:10]
+                        if isinstance(at, str) and len(at) >= 10
+                        else f"_old_{i}"
+                    )
                     migrated[key] = p
                 else:
                     migrated[f"_old_{i}"] = entry
             hist = migrated
 
-        
+     
         hist[date_key] = prices
-
         connect.history = hist
         connect.save(update_fields=["current", "history", "last_synced_at", "updated_at"])
 

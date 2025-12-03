@@ -1,9 +1,17 @@
+# apps/games/services/search.py
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Dict, List, Optional
+
 from .registry import GameRegistry, REGISTRY
 
+
 class GameSearchService:
+    """
+    simple substring-based search service over gameregistry
+    """
+
     def __init__(self, registry: GameRegistry = REGISTRY) -> None:
         self.registry = registry
 
@@ -16,11 +24,15 @@ class GameSearchService:
         platform: Optional[str] = None,
         autoload_dir: Optional[Path] = None,
     ) -> Dict[str, object]:
+        """
+        search games by name and optional platform filter.
+        """
         if autoload_dir is not None:
             self.registry.ensure_loaded(autoload_dir)
 
         q = (q or "").strip().lower()
         platform = (platform or "").strip().lower()
+
         if not q:
             return {"total": 0, "items": [], "limit": limit, "offset": offset}
 
