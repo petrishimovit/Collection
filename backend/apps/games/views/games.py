@@ -21,6 +21,7 @@ class GameSearchView(views.APIView):
 
     @extend_schema(
         summary="Game search",
+        tags=["Games"],
         parameters=[
             OpenApiParameter("q", OpenApiTypes.STR, OpenApiParameter.QUERY, required=True),
             OpenApiParameter("platform", OpenApiTypes.STR, OpenApiParameter.QUERY),

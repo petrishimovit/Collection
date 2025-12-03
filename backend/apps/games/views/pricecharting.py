@@ -17,6 +17,7 @@ from apps.games.services.pricecharting import PricechartingService
 
 @extend_schema(
     summary="Search PriceCharting",
+    tags=["Games"],
     parameters=[
         OpenApiParameter("q", str, OpenApiParameter.QUERY, required=True),
         OpenApiParameter(
@@ -32,7 +33,6 @@ from apps.games.services.pricecharting import PricechartingService
             description="Number of results to return (1..50)",
         ),
     ],
-    tags=["PriceCharting"],
 )
 class PricechartingSearchView(views.APIView):
     """
@@ -45,21 +45,17 @@ class PricechartingSearchView(views.APIView):
         params = SearchQuerySerializer(data=request.query_params)
         params.is_valid(raise_exception=True)
 
-        q = params.validated_data["q"]
-        region = params.validated_data["region"]
-        limit = params.validated_data["limit"]
-
-        items = PricechartingService.search_items(q=q, region=region, limit=limit)
+        items = PricechartingService.search_items(**params.validated_data)
         return response.Response(items)
-    
+
 
 @extend_schema(
     summary="Get PriceCharting item details",
+    tags=["Games"],
     parameters=[
         OpenApiParameter("url", str, OpenApiParameter.QUERY),
         OpenApiParameter("slug", str, OpenApiParameter.QUERY),
     ],
-    tags=["PriceCharting"],
 )
 class PricechartingItemView(views.APIView):
     """
@@ -79,6 +75,7 @@ class PricechartingItemView(views.APIView):
         return response.Response(data)
 
 
+@extend_schema(tags=["Games"])
 class PriceChartingConnectViewSet(viewsets.ReadOnlyModelViewSet):
     """
     read-only viewSet for pricechartingconnect objects.
@@ -88,12 +85,24 @@ class PriceChartingConnectViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = PriceChartingConnectSerializer
     queryset = PricechartingService.public_qs()
 
+    @extend_schema(summary="List PriceCharting connects")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Retrieve PriceCharting connect")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
     @decorators.action(
         methods=["post"],
         detail=False,
         url_path="bind",
         permission_classes=[permissions.IsAuthenticated],
         serializer_class=BindSerializer,
+    )
+    @extend_schema(
+        summary="Bind a collection item to PriceCharting by URL",
+        tags=["Games"],
     )
     def bind(self, request):
         """
@@ -120,6 +129,10 @@ class PriceChartingConnectViewSet(viewsets.ReadOnlyModelViewSet):
         url_path="unbind",
         permission_classes=[permissions.IsAuthenticated],
         serializer_class=UnbindSerializer,
+    )
+    @extend_schema(
+        summary="Unbind a collection item from PriceCharting",
+        tags=["Games"],
     )
     def unbind(self, request):
         """
