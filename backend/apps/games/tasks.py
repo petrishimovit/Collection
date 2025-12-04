@@ -8,7 +8,10 @@ from apps.games.services.pricecharting import PricechartingService
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=30)
-def update_all_pricecharting(self) -> dict:
+def update_all_pricecharting() -> dict:
+    """
+    celery task for update all games in pricecharting
+    """
     
     total = 0
     ok = 0

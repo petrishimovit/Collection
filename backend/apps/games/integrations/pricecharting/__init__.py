@@ -1,5 +1,15 @@
-from .client import PricechartingClient
-from .types import Region
-from .schemas import SearchItem
 
-__all__ = ["PricechartingClient", "Region", "SearchItem"]
+"""
+integration with pricecharting
+
+this package contains
+- low-level http client
+- simple schemas 
+- shared types 
+"""
+
+from .client import PricechartingClient
+from .schemas import SearchItem
+from .types import Region
+
+__all__ = ["PricechartingClient", "SearchItem", "Region"]
