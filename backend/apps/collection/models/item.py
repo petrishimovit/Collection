@@ -37,6 +37,8 @@ class Item(BaseModel):
 
     name = models.CharField(max_length=250)
 
+    for_sale = models.BooleanField(default=False)
+
     description = models.CharField(
         max_length=700,
         null=True,
