@@ -43,6 +43,13 @@ from apps.collection.pagination import DefaultPageNumberPagination
                 description="Filter items by collection ID.",
             ),
             OpenApiParameter(
+                name="for_sale",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter items by sale state: `true` or `false`.",
+            ),
+            OpenApiParameter(
                 name="ordering",
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.QUERY,
@@ -108,15 +115,22 @@ class ItemViewSet(viewsets.ModelViewSet):
 
     queryset = Item.objects.all().select_related("collection", "collection__owner")
 
-    
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    
+
     def get_queryset(self):
         qs = get_items_for_user(self.request.user)
 
         collection_id = self.request.query_params.get("collection")
         if collection_id:
             qs = qs.filter(collection_id=collection_id)
+
+        for_sale = self.request.query_params.get("for_sale")
+        if for_sale is not None:
+            value = str(for_sale).lower()
+            if value in ("true", "1"):
+                qs = qs.filter(for_sale=True)
+            elif value in ("false", "0"):
+                qs = qs.filter(for_sale=False)
 
         qs = self.filter_queryset(qs)
         return qs
@@ -152,8 +166,6 @@ class ItemViewSet(viewsets.ModelViewSet):
 
         serializer.save()
 
-    
-
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
 
@@ -178,6 +190,13 @@ class ItemViewSet(viewsets.ModelViewSet):
                 location=OpenApiParameter.QUERY,
                 required=False,
                 description="Optionally filter search results by collection ID.",
+            ),
+            OpenApiParameter(
+                name="for_sale",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter items by sale state: `true` or `false`.",
             ),
             OpenApiParameter(
                 name="ordering",
@@ -207,6 +226,14 @@ class ItemViewSet(viewsets.ModelViewSet):
         collection_id = request.query_params.get("collection")
         if collection_id:
             qs = qs.filter(collection_id=collection_id)
+
+        for_sale = request.query_params.get("for_sale")
+        if for_sale is not None:
+            value = str(for_sale).lower()
+            if value in ("true", "1"):
+                qs = qs.filter(for_sale=True)
+            elif value in ("false", "0"):
+                qs = qs.filter(for_sale=False)
 
         qs = self.filter_queryset(qs)
 
