@@ -320,6 +320,13 @@ class CollectionViewSet(viewsets.ModelViewSet):
                     "- `current_value`, `-current_value`"
                 ),
             ),
+            OpenApiParameter(
+                name="for_sale",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter items in the collection by sale state: `true` or `false`.",
+            ),
         ],
     )
     @action(detail=True, methods=["get", "post"], url_path="items")
@@ -328,6 +335,15 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
         if request.method.lower() == "get":
             qs = get_collection_items_for_user(request.user, collection_id)
+
+            for_sale = request.query_params.get("for_sale")
+            if for_sale is not None:
+                value = str(for_sale).lower()
+                if value in ("true", "1"):
+                    qs = qs.filter(for_sale=True)
+                elif value in ("false", "0"):
+                    qs = qs.filter(for_sale=False)
+
             ordering = request.query_params.get("ordering")
             if ordering:
                 qs = qs.order_by(ordering)
