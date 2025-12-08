@@ -65,7 +65,7 @@ class UserService:
         and all related BaseModel entities.
         """
 
-        from apps.collection.models import Collection , Item ,ItemImage
+        from apps.collection.models import Collection , Item ,ItemImage , Favorite
         from apps.accounts.models import Profile,Follow
         from apps.posts.models import Post,Comment,PostReaction,CommentReaction
 
@@ -87,6 +87,10 @@ class UserService:
         Comment.all_objects.filter(author=user).update(is_active=is_active)
         PostReaction.all_objects.filter(user=user).update(is_active=is_active)
         CommentReaction.all_objects.filter(user=user).update(is_active=is_active)
+
+    
+        Favorite.all_objects.filter(user=user).update(is_active=is_active)
+        
 
     @staticmethod
     def deactivate_self(*, user: User) -> None:

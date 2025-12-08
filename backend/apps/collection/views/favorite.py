@@ -27,7 +27,6 @@ from apps.collection.pagination import FavoritePagination
 class UserFavoritesListView(generics.ListAPIView):
     """
     List favorites for a given user.
-
     """
 
     serializer_class = FavoriteSerializer
