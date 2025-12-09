@@ -7,6 +7,7 @@ from apps.collection.views.favorite import (
     MyFavoritesCreateView,
     FavoriteDestroyView,
 )
+from apps.collection.views.user_resources import UserCollectionsListView , UserItemsListView
 
 
 router = DefaultRouter()
@@ -27,6 +28,14 @@ urlpatterns = router.urls + [
     path(
         "favorites/<uuid:pk>/",
         FavoriteDestroyView.as_view()
+    ),
+    path(
+        "users/<uuid:user_id>/collections/",
+        UserCollectionsListView.as_view(),
+    ),
+    path(
+        "users/<uuid:user_id>/items/",
+        UserItemsListView.as_view(),
     ),
 ]
 
