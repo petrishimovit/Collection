@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions, filters
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -9,6 +10,7 @@ from apps.collection.serializers.item import ItemSerializer
 from apps.collection.pagination import DefaultPageNumberPagination
 from apps.collection.selectors.collection import get_collections_for_user_profile
 from apps.collection.selectors.item import get_user_items_for_viewer
+from apps.accounts.services.user import UserService
 
 
 @extend_schema(
@@ -36,10 +38,6 @@ from apps.collection.selectors.item import get_user_items_for_viewer
     responses={200: CollectionSerializer},
 )
 class UserCollectionsListView(generics.ListAPIView):
-    """
-    List collections of a specific user with privacy rules applied for the viewer.
-    """
-
     serializer_class = CollectionSerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = DefaultPageNumberPagination
@@ -89,10 +87,6 @@ class UserCollectionsListView(generics.ListAPIView):
     responses={200: ItemSerializer},
 )
 class UserItemsListView(generics.ListAPIView):
-    """
-    List items of a specific user with collection/item privacy rules applied.
-    """
-
     serializer_class = ItemSerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = DefaultPageNumberPagination
@@ -114,3 +108,23 @@ class UserItemsListView(generics.ListAPIView):
 
         qs = self.filter_queryset(qs)
         return qs
+
+
+@extend_schema(
+    summary="User collections and items heatmap",
+    description=(
+        "Return activity heatmap for a specific user based on collections and items "
+        "that are visible to the current viewer.\n\n"
+        "Each entry represents total number of create/update events for that day."
+    ),
+    tags=["Users"],
+)
+class UserHeatmapView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, user_id, *args, **kwargs):
+        collections_qs = get_collections_for_user_profile(request.user, user_id)
+        items_qs = get_user_items_for_viewer(request.user, user_id)
+
+        data = UserService.build_heatmap(collections_qs, items_qs)
+        return Response(data)
