@@ -17,13 +17,17 @@ router.register(r"items", ItemViewSet, basename="Item")
 
 
 urlpatterns = router.urls + [
-    path(
+   path(
         "users/<uuid:user_id>/favorites/",
-        UserFavoritesListView.as_view()
+        UserFavoritesListView.as_view(),
     ),
     path(
         "users/me/favorites/",
         MyFavoritesCreateView.as_view(),
+    ),
+    path(
+        "users/favorites/<uuid:pk>/",
+        FavoriteDestroyView.as_view(),
     ),
     path(
         "users/<uuid:user_id>/collections/",

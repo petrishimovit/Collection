@@ -243,7 +243,7 @@ def test_delete_favorite_by_owner(api_client):
     api_client.force_authenticate(user)
 
     # Act
-    url = f"/favorites/{str(fav.id)}/"
+    url = f"/users/favorites/{str(fav.id)}/"
     res = api_client.delete(url)
 
     # Assert
@@ -269,7 +269,7 @@ def test_cannot_delete_favorite_of_another_user(api_client):
     api_client.force_authenticate(user)
 
     # Act
-    url = f"/favorites/{str(fav.id)}/"
+    url = f"/users/favorites/{str(fav.id)}/"
     res = api_client.delete(url)
 
     # Assert
