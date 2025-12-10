@@ -5,12 +5,12 @@ from django.db.models import Q
 from core.models import BaseModel
 
 
-class Favorite(BaseModel):
+class WishList(BaseModel):
     """
-    favorite entry in user profile.
+    Favorite / wishlist entry in user profile.
     """
 
-    class FavoriteKind(models.TextChoices):
+    class Kind(models.TextChoices):
         ITEM = "item", "Item"
         COLLECTION = "collection", "Collection"
         CUSTOM = "custom", "Custom / external"
@@ -23,7 +23,7 @@ class Favorite(BaseModel):
 
     kind = models.CharField(
         max_length=20,
-        choices=FavoriteKind.choices,
+        choices=Kind.choices,
     )
 
     item = models.ForeignKey(
@@ -61,16 +61,15 @@ class Favorite(BaseModel):
             models.UniqueConstraint(
                 fields=["user", "item"],
                 condition=Q(item__isnull=False),
-                name="favorite_unique_item_per_user",
+                name="wishlist_unique_item_per_user",
             ),
             models.UniqueConstraint(
                 fields=["user", "collection"],
                 condition=Q(collection__isnull=False),
-                name="favorite_unique_collection_per_user",
+                name="wishlist_unique_collection_per_user",
             ),
-            
             models.CheckConstraint(
-                name="favorite_kind_matches_target",
+                name="wishlist_kind_matches_target",
                 check=(
                     Q(kind="item", item__isnull=False, collection__isnull=True)
                     | Q(kind="collection", collection__isnull=False, item__isnull=True)

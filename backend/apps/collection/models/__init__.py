@@ -1,3 +1,3 @@
 from .collection import Collection
 from .item import Item , ItemImage
-from .favorite import Favorite
+from .wishlist import WishList

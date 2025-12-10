@@ -1,9 +1,10 @@
 import pytest
-from django.utils import timezone
 from datetime import timedelta
 
+from django.utils import timezone
+
 from apps.accounts.models import User
-from apps.collection.models import Favorite, Collection, Item
+from apps.collection.models import WishList, Collection, Item
 
 pytestmark = pytest.mark.django_db
 
@@ -30,7 +31,7 @@ def create_item(collection: Collection, name: str = "Test item"):
     )
 
 
-def test_user_favorites_list_returns_only_given_user(api_client):
+def test_user_wishlist_list_returns_only_given_user(api_client):
     # Arrange
     user1 = create_user("user1@example.com", "user1")
     user2 = create_user("user2@example.com", "user2")
@@ -38,21 +39,22 @@ def test_user_favorites_list_returns_only_given_user(api_client):
     col = create_collection(user1)
     item = create_item(col)
 
-    fav1 = Favorite.objects.create(
+    fav1 = WishList.objects.create(
         user=user1,
-        kind=Favorite.FavoriteKind.ITEM,
+        kind=WishList.Kind.ITEM,
         item=item,
         title="u1_fav",
     )
-    Favorite.objects.create(
+    WishList.objects.create(
         user=user2,
-        kind=Favorite.FavoriteKind.ITEM,
+        kind=WishList.Kind.ITEM,
         item=item,
         title="u2_fav",
     )
 
+    url = f"/users/{str(user1.id)}/wishlist/"
+
     # Act
-    url = f"/users/{str(user1.id)}/favorites/"
     res = api_client.get(url)
 
     # Assert
@@ -61,34 +63,34 @@ def test_user_favorites_list_returns_only_given_user(api_client):
     assert res.data["results"][0]["id"] == str(fav1.id)
 
 
-def test_user_favorites_list_supports_ordering(api_client):
+def test_user_wishlist_list_supports_ordering(api_client):
     # Arrange
     user = create_user("u@example.com", "u")
     col = create_collection(user)
     item_a = create_item(col, "A")
     item_b = create_item(col, "B")
 
-    fav_old = Favorite.objects.create(
+    fav_old = WishList.objects.create(
         user=user,
-        kind=Favorite.FavoriteKind.ITEM,
+        kind=WishList.Kind.ITEM,
         item=item_a,
         title="old",
     )
-    fav_new = Favorite.objects.create(
+    fav_new = WishList.objects.create(
         user=user,
-        kind=Favorite.FavoriteKind.ITEM,
+        kind=WishList.Kind.ITEM,
         item=item_b,
         title="new",
     )
 
-    Favorite.objects.filter(pk=fav_old.pk).update(
+    WishList.objects.filter(pk=fav_old.pk).update(
         created_at=timezone.now() - timedelta(days=1)
     )
-    Favorite.objects.filter(pk=fav_new.pk).update(
+    WishList.objects.filter(pk=fav_new.pk).update(
         created_at=timezone.now()
     )
 
-    url = f"/users/{str(user.id)}/favorites/"
+    url = f"/users/{str(user.id)}/wishlist/"
 
     # Act
     res_default = api_client.get(url)
@@ -99,12 +101,13 @@ def test_user_favorites_list_supports_ordering(api_client):
     ids_default = [r["id"] for r in res_default.data["results"]]
     assert ids_default == [str(fav_new.id), str(fav_old.id)]
 
+    # Assert
     assert res_created.status_code == 200
     ids_created = [r["id"] for r in res_created.data["results"]]
     assert ids_created == [str(fav_old.id), str(fav_new.id)]
 
 
-def test_create_favorite_item_success(api_client):
+def test_create_wishlist_item_returns_400_for_now(api_client):
     # Arrange
     user = create_user("user@example.com", "user")
     owner = create_user("owner@example.com", "owner")
@@ -113,92 +116,100 @@ def test_create_favorite_item_success(api_client):
     item = create_item(col, "Item A")
 
     api_client.force_authenticate(user)
+    url = "/users/me/wishlist/"
+
+    payload = {"kind": "item", "item_id": str(item.id)}
 
     # Act
-    url = "/users/me/favorites/"
-    payload = {"kind": "item", "item_id": str(item.id)}
     res = api_client.post(url, payload, format="json")
 
     # Assert
     assert res.status_code == 400
-    
 
 
-def test_create_favorite_collection_success(api_client):
-    # Arrange
+def test_create_wishlist_collection_returns_400_for_now(api_client):
+    # Arrange 
     user = create_user("user@example.com", "user")
     owner = create_user("owner@example.com", "owner")
 
     col = create_collection(owner, "Foreign collection")
+
     api_client.force_authenticate(user)
+    url = "/users/me/wishlist/"
+
+    payload = {"kind": "collection", "collection_id": str(col.id)}
 
     # Act
-    url = "/users/me/favorites/"
-    payload = {"kind": "collection", "collection_id": str(col.id)}
     res = api_client.post(url, payload, format="json")
 
     # Assert
     assert res.status_code == 400
-    
 
-def test_create_favorite_custom_success(api_client):
+
+def test_create_wishlist_custom_success(api_client):
     # Arrange
     user = create_user("user@example.com", "user")
-    api_client.force_authenticate(user)
 
-    # Act
-    url = "/users/me/favorites/"
+    api_client.force_authenticate(user)
+    url = "/users/me/wishlist/"
+
     payload = {
         "kind": "custom",
         "title": "Rare Cart",
         "external_url": "https://example.com/auction/123",
     }
+
+    # Act
     res = api_client.post(url, payload, format="json")
 
     # Assert
     assert res.status_code == 201
-    fav = Favorite.objects.first()
+    fav = WishList.objects.first()
     assert fav.user == user
-    assert fav.kind == Favorite.FavoriteKind.CUSTOM
+    assert fav.kind == WishList.Kind.CUSTOM
     assert fav.title == "Rare Cart"
+    assert fav.item is None
+    assert fav.collection is None
 
 
-def test_cannot_favorite_own_item(api_client):
+def test_cannot_wishlist_own_item(api_client):
     # Arrange
     owner = create_user("owner@example.com", "owner")
     col = create_collection(owner)
     item = create_item(col)
 
     api_client.force_authenticate(owner)
+    url = "/users/me/wishlist/"
+
+    payload = {"kind": "item", "item_id": str(item.id)}
 
     # Act
-    url = "/users/me/favorites/"
-    payload = {"kind": "item", "item_id": str(item.id)}
     res = api_client.post(url, payload, format="json")
 
     # Assert
     assert res.status_code == 400
-    assert Favorite.objects.count() == 0
+    assert WishList.objects.count() == 0
 
 
-def test_cannot_favorite_own_collection(api_client):
+def test_cannot_wishlist_own_collection(api_client):
     # Arrange
     owner = create_user("owner@example.com", "owner")
     col = create_collection(owner)
 
     api_client.force_authenticate(owner)
+    url = "/users/me/wishlist/"
+
+    payload = {"kind": "collection", "collection_id": str(col.id)}
 
     # Act
-    url = "/users/me/favorites/"
-    payload = {"kind": "collection", "collection_id": str(col.id)}
     res = api_client.post(url, payload, format="json")
 
     # Assert
     assert res.status_code == 400
-    assert Favorite.objects.count() == 0
+    assert WishList.objects.count() == 0
 
 
-def test_cannot_create_duplicate_favorite(api_client):
+def test_cannot_create_duplicate_item_wishlist(api_client):
     # Arrange
     user = create_user("user@example.com", "user")
     owner = create_user("owner@example.com", "owner")
@@ -206,52 +217,27 @@ def test_cannot_create_duplicate_favorite(api_client):
     col = create_collection(owner)
     item = create_item(col)
 
-    Favorite.objects.create(
+    WishList.objects.create(
         user=user,
-        kind=Favorite.FavoriteKind.ITEM,
+        kind=WishList.Kind.ITEM,
         item=item,
         title="dup",
     )
 
     api_client.force_authenticate(user)
+    url = "/users/me/wishlist/"
+
+    payload = {"kind": "item", "item_id": str(item.id)}
 
     # Act
-    url = "/users/me/favorites/"
-    payload = {"kind": "item", "item_id": str(item.id)}
     res = api_client.post(url, payload, format="json")
 
     # Assert
     assert res.status_code == 400
-    assert Favorite.objects.count() == 1
+    assert WishList.objects.count() == 1
 
 
-def test_delete_favorite_by_owner(api_client):
-    # Arrange
-    user = create_user("user@example.com", "user")
-    owner = create_user("owner@example.com", "owner")
-
-    col = create_collection(owner)
-    item = create_item(col)
-
-    fav = Favorite.objects.create(
-        user=user,
-        kind=Favorite.FavoriteKind.ITEM,
-        item=item,
-        title="del",
-    )
-
-    api_client.force_authenticate(user)
-
-    # Act
-    url = f"/users/favorites/{str(fav.id)}/"
-    res = api_client.delete(url)
-
-    # Assert
-    assert res.status_code == 204
-    assert Favorite.objects.count() == 0
-
-
-def test_cannot_delete_favorite_of_another_user(api_client):
+def test_delete_wishlist_by_owner(api_client):
     # Arrange
     user = create_user("user@example.com", "user")
     other = create_user("other@example.com", "other")
@@ -259,19 +245,45 @@ def test_cannot_delete_favorite_of_another_user(api_client):
     col = create_collection(other)
     item = create_item(col)
 
-    fav = Favorite.objects.create(
+    fav = WishList.objects.create(
+        user=user,
+        kind=WishList.Kind.ITEM,
+        item=item,
+        title="del",
+    )
+
+    api_client.force_authenticate(user)
+    url = f"/users/wishlist/{str(fav.id)}/"
+
+    # Act
+    res = api_client.delete(url)
+
+    # Assert
+    assert res.status_code == 204
+    assert WishList.objects.count() == 0
+
+
+def test_cannot_delete_wishlist_of_another_user(api_client):
+    # Arrange
+    user = create_user("user@example.com", "user")
+    other = create_user("other@example.com", "other")
+
+    col = create_collection(other)
+    item = create_item(col)
+
+    fav = WishList.objects.create(
         user=other,
-        kind=Favorite.FavoriteKind.ITEM,
+        kind=WishList.Kind.ITEM,
         item=item,
         title="other_fav",
     )
 
     api_client.force_authenticate(user)
+    url = f"/users/wishlist/{str(fav.id)}/"
 
     # Act
-    url = f"/users/favorites/{str(fav.id)}/"
     res = api_client.delete(url)
 
     # Assert
     assert res.status_code == 403
-    assert Favorite.objects.filter(pk=fav.id).exists()
+    assert WishList.objects.filter(pk=fav.id).exists()
