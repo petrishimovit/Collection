@@ -37,6 +37,8 @@ class Item(BaseModel):
 
     name = models.CharField(max_length=250)
 
+    for_sale = models.BooleanField(default=False)
+
     description = models.CharField(
         max_length=700,
         null=True,
@@ -101,6 +103,11 @@ class Item(BaseModel):
     hidden_fields = models.JSONField(
     default=list,
     blank=True,
+    )
+
+    is_favorite = models.BooleanField(
+        default=False,
+        db_index=True,
     )
 
     class Meta:

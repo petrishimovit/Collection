@@ -1,5 +1,5 @@
 from django.db import models
-from rest_framework import viewsets, permissions, status, serializers
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
@@ -49,6 +49,13 @@ from apps.collection.pagination import DefaultPageNumberPagination
                     "- `total_current_value`, `-total_current_value`\n"
                     "- `total_purchase_price`, `-total_purchase_price`"
                 ),
+            ),
+            OpenApiParameter(
+                name="is_favorite",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter collections by favorite flag: `true` or `false`.",
             ),
         ],
     ),
@@ -117,6 +124,18 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
+    def _apply_is_favorite_filter(self, request, queryset):
+        is_favorite = request.query_params.get("is_favorite")
+        if is_favorite is None:
+            return queryset
+
+        value = str(is_favorite).lower()
+        if value in ("true", "1", "yes"):
+            return queryset.filter(is_favorite=True)
+        if value in ("false", "0", "no"):
+            return queryset.filter(is_favorite=False)
+        return queryset
+
     def get_queryset(self):
         if self.action == "list":
             return get_public_collections()
@@ -124,6 +143,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = get_public_collections()
+        queryset = self._apply_is_favorite_filter(request, queryset)
         queryset = self.filter_queryset(queryset)
 
         page = self.paginate_queryset(queryset)
@@ -175,6 +195,13 @@ class CollectionViewSet(viewsets.ModelViewSet):
                     "- `total_purchase_price`, `-total_purchase_price`"
                 ),
             ),
+            OpenApiParameter(
+                name="is_favorite",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter collections by favorite flag: `true` or `false`.",
+            ),
         ],
     )
     @action(
@@ -185,6 +212,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
     )
     def my(self, request, *args, **kwargs):
         qs = get_user_collections(request.user)
+        qs = self._apply_is_favorite_filter(request, qs)
         qs = self.filter_queryset(qs)
 
         page = self.paginate_queryset(qs)
@@ -219,6 +247,13 @@ class CollectionViewSet(viewsets.ModelViewSet):
                     "- `total_purchase_price`, `-total_purchase_price`"
                 ),
             ),
+            OpenApiParameter(
+                name="is_favorite",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter collections by favorite flag: `true` or `false`.",
+            ),
         ],
     )
     @action(
@@ -229,6 +264,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
     )
     def feed(self, request, *args, **kwargs):
         qs = get_feed_collections_for_user(request.user)
+        qs = self._apply_is_favorite_filter(request, qs)
         qs = self.filter_queryset(qs)
 
         page = self.paginate_queryset(qs)
@@ -266,6 +302,13 @@ class CollectionViewSet(viewsets.ModelViewSet):
                     "- `total_purchase_price`, `-total_purchase_price`"
                 ),
             ),
+            OpenApiParameter(
+                name="is_favorite",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter collections by favorite flag: `true` or `false`.",
+            ),
         ],
         responses={200: CollectionSerializer},
     )
@@ -284,6 +327,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
                 | models.Q(description__icontains=q)
             )
 
+        qs = self._apply_is_favorite_filter(request, qs)
         qs = self.filter_queryset(qs)
 
         page = self.paginate_queryset(qs)
@@ -320,6 +364,20 @@ class CollectionViewSet(viewsets.ModelViewSet):
                     "- `current_value`, `-current_value`"
                 ),
             ),
+            OpenApiParameter(
+                name="for_sale",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter items in the collection by sale state: `true` or `false`.",
+            ),
+            OpenApiParameter(
+                name="is_favorite",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter items in the collection by favorite flag: `true` or `false`.",
+            ),
         ],
     )
     @action(detail=True, methods=["get", "post"], url_path="items")
@@ -328,6 +386,23 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
         if request.method.lower() == "get":
             qs = get_collection_items_for_user(request.user, collection_id)
+
+            for_sale = request.query_params.get("for_sale")
+            if for_sale is not None:
+                value = str(for_sale).lower()
+                if value in ("true", "1"):
+                    qs = qs.filter(for_sale=True)
+                elif value in ("false", "0"):
+                    qs = qs.filter(for_sale=False)
+
+            is_favorite = request.query_params.get("is_favorite")
+            if is_favorite is not None:
+                value = str(is_favorite).lower()
+                if value in ("true", "1", "yes"):
+                    qs = qs.filter(is_favorite=True)
+                elif value in ("false", "0", "no"):
+                    qs = qs.filter(is_favorite=False)
+
             ordering = request.query_params.get("ordering")
             if ordering:
                 qs = qs.order_by(ordering)

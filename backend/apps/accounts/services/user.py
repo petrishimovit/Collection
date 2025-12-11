@@ -1,5 +1,8 @@
+from django.db.models.functions import TruncDate
+from django.db.models import Count
 from dataclasses import dataclass
 from django.db import transaction
+from collections import Counter
 from django.contrib.auth import get_user_model
 
 
@@ -65,7 +68,7 @@ class UserService:
         and all related BaseModel entities.
         """
 
-        from apps.collection.models import Collection , Item ,ItemImage
+        from apps.collection.models import Collection , Item ,ItemImage , Favorite
         from apps.accounts.models import Profile,Follow
         from apps.posts.models import Post,Comment,PostReaction,CommentReaction
 
@@ -88,6 +91,10 @@ class UserService:
         PostReaction.all_objects.filter(user=user).update(is_active=is_active)
         CommentReaction.all_objects.filter(user=user).update(is_active=is_active)
 
+    
+        Favorite.all_objects.filter(user=user).update(is_active=is_active)
+        
+
     @staticmethod
     def deactivate_self(*, user: User) -> None:
         return UserService.change_active(user=user, is_active=False)
@@ -97,3 +104,37 @@ class UserService:
         return UserService.change_active(user=user, is_active=True)
 
 
+    @staticmethod
+    def build_heatmap(collections_qs, items_qs):
+        """
+        build a heatmap dataset from collections + items querysets.
+        """
+        events = Counter()
+
+        def add_activity(qs):
+            
+            created = (
+                qs.annotate(day=TruncDate("created_at"))
+                .values("day")
+                .annotate(cnt=Count("id"))
+            )
+            for row in created:
+                if row["day"]:
+                    events[row["day"]] += row["cnt"]
+
+            updated = (
+                qs.annotate(day=TruncDate("updated_at"))
+                .values("day")
+                .annotate(cnt=Count("id"))
+            )
+            for row in updated:
+                if row["day"]:
+                    events[row["day"]] += row["cnt"]
+
+        add_activity(collections_qs)
+        add_activity(items_qs)
+
+        return [
+            {"date": day, "count": events[day]}
+            for day in sorted(events.keys())
+        ]

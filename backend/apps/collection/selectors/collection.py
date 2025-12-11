@@ -73,7 +73,6 @@ def get_collections_for_user(user: Optional[User]) -> QuerySet[Collection]:
 
     public = Q(privacy=Collection.PRIVACY_PUBLIC)
 
-   
     following_only = Q(
         privacy=Collection.PRIVACY_FOLLOWING,
         owner__following_relations__following=user,
@@ -119,9 +118,7 @@ def get_feed_collections_for_user(user: User) -> QuerySet[Collection]:
 
     qs = _base_collection_qs()
 
-
     follows_owner = Q(owner__follower_relations__follower=user)
-
 
     owner_follows_user = Q(owner__following_relations__following=user)
 
@@ -130,3 +127,19 @@ def get_feed_collections_for_user(user: User) -> QuerySet[Collection]:
     following_only = Q(privacy=Collection.PRIVACY_FOLLOWING) & owner_follows_user
 
     return qs.filter(follows_owner & (public | following_only)).distinct()
+
+
+def get_collections_for_user_profile(
+    viewer: Optional[User],
+    owner_id: str,
+) -> QuerySet[Collection]:
+    """
+    Collections owned by the given user and visible to the viewer.
+
+    - viewer: user who is requesting the data (may be anonymous)
+    - owner_id: target user ID whose collections we want to list
+
+    Privacy rules are inherited from get_collections_for_user(viewer).
+    """
+    visible_qs = get_collections_for_user(viewer)
+    return visible_qs.filter(owner_id=owner_id)

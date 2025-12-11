@@ -43,22 +43,18 @@ def get_items_for_user(user) -> models.QuerySet[Item]:
     """
     qs = _base_items_qs()
 
-    #
     if not user or not getattr(user, "is_authenticated", False):
         return qs.filter(
             collection__privacy=Collection.PRIVACY_PUBLIC,
             privacy=Item.PRIVACY_PUBLIC,
         )
 
-   
     owner_follows_user_q = Q(
         collection__owner__following_relations__following=user
     )
 
-   
     own_items_q = Q(collection__owner=user)
 
- 
     public_collections_q = (
         Q(collection__privacy=Collection.PRIVACY_PUBLIC)
         & (
@@ -102,3 +98,14 @@ def get_collection_items_for_user(user, collection_id: Optional[str]) -> models.
         return Item.objects.none()
 
     return get_items_for_user(user).filter(collection_id=collection_id)
+
+
+def get_user_items_for_viewer(viewer, owner_id: str) -> models.QuerySet[Item]:
+    """
+    Return items belonging to collections of the given user
+    that are visible to the viewer.
+
+    - viewer: user who is requesting the data (may be anonymous)
+    - owner_id: target user ID whose items we want to list
+    """
+    return get_items_for_user(viewer).filter(collection__owner_id=owner_id)
