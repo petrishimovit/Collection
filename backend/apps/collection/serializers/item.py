@@ -1,9 +1,10 @@
 from rest_framework import serializers
+
 from .mixins import HiddenFieldsMixin
 from apps.collection.models import Item, Collection
 
 
-class ItemSerializer(HiddenFieldsMixin,serializers.ModelSerializer):
+class ItemSerializer(HiddenFieldsMixin, serializers.ModelSerializer):
     """Serializer for collection items."""
 
     owner_path = "collection.owner"
@@ -28,9 +29,10 @@ class ItemSerializer(HiddenFieldsMixin,serializers.ModelSerializer):
             "pricecharting",
             "created_at",
             "updated_at",
-            "for_sale"
+            "for_sale",
+            "is_favorite",
         )
-        read_only_fields = ("id", "created_at", "updated_at","pricecharting")
+        read_only_fields = ("id", "created_at", "updated_at", "pricecharting")
 
     def validate(self, attrs):
         """
@@ -48,14 +50,18 @@ class ItemSerializer(HiddenFieldsMixin,serializers.ModelSerializer):
 
         collection_privacy = collection.privacy
 
-        
-        if collection_privacy == Collection.PRIVACY_PRIVATE and privacy != Item.PRIVACY_PRIVATE:
+        if (
+            collection_privacy == Collection.PRIVACY_PRIVATE
+            and privacy != Item.PRIVACY_PRIVATE
+        ):
             raise serializers.ValidationError(
                 {"privacy": "Item privacy must be private when collection is private."}
             )
 
-
-        if collection_privacy == Collection.PRIVACY_FOLLOWING and privacy == Item.PRIVACY_PUBLIC:
+        if (
+            collection_privacy == Collection.PRIVACY_FOLLOWING
+            and privacy == Item.PRIVACY_PUBLIC
+        ):
             raise serializers.ValidationError(
                 {"privacy": "Item in following-only collection cannot be public."}
             )
