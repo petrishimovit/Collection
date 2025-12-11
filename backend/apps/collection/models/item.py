@@ -105,6 +105,11 @@ class Item(BaseModel):
     blank=True,
     )
 
+    is_favorite = models.BooleanField(
+        default=False,
+        db_index=True,
+    )
+
     class Meta:
         ordering = ("name",)
 

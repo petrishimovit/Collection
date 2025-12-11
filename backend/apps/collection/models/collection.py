@@ -45,6 +45,11 @@ class Collection(BaseModel):
         default=0,
     )
 
+    is_favorite = models.BooleanField(
+        default=False,
+        db_index=True,
+    )
+
     class Meta:
         ordering = ("name",)
         unique_together = (("owner", "name"),)
