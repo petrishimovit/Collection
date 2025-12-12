@@ -1,3 +1,9 @@
 from django.contrib import admin
 
-# Register your models here.
+from core.admin import BaseAdmin
+from .models import Notification
+
+
+@admin.register(Notification)
+class NotificationAdmin(BaseAdmin):
+    """Notification admin configuration."""
