@@ -33,6 +33,7 @@ urlpatterns = [
     path("", include("apps.collection.urls")),
     path("", include("apps.posts.urls")),
     path("games/", include("apps.games.urls")),
+    path("", include("apps.notifications.urls")),
 
 ]
 
