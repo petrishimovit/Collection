@@ -5,7 +5,6 @@ from core.models import BaseModel
 
 
 class Notification(BaseModel):
-    
     """
     Notification model for User`s
     """
