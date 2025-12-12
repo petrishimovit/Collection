@@ -16,6 +16,7 @@ class Notification(BaseModel):
         COMMENT_CREATE = "comment_create"
         COMMENT_LIKE = "comment_like"
         ITEM_CREATE = "item_create"
+        COLLECTION_CREATE = "collection_create"
         
 
     for_user = models.ForeignKey(

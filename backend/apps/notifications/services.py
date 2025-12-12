@@ -96,3 +96,33 @@ class NotificationService:
                 "post_id": str(comment.post_id),
             },
         )
+    
+    @transaction.atomic
+    def create_collection_for_followers(self, *, owner, collection) -> int:
+        """Notify all followers about new collection."""
+        from apps.accounts.models import Follow
+
+        if collection.privacy != "public":
+            return
+
+        follower_ids = list(
+            Follow.objects.filter(following=owner).values_list("follower_id", flat=True)
+        )
+        if not follower_ids :
+            return 0
+        
+
+        items = [
+            Notification(
+                for_user_id=follower_id,
+                type=Notification.Type.COLLECTION_CREATE,
+                info={
+                    "user_id": str(owner.id),
+                    "collection_id": str(collection.id),
+                },
+                is_checked=False,
+            )
+            for follower_id in follower_ids
+        ]
+        Notification.all_objects.bulk_create(items, batch_size=1000)
+        return len(items)
