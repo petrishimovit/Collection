@@ -21,6 +21,9 @@ from apps.collection.selectors.item import (
 )
 from apps.collection.pagination import DefaultPageNumberPagination
 
+from apps.notifications.services import NotificationService
+
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -179,7 +182,10 @@ class ItemViewSet(viewsets.ModelViewSet):
         if collection.owner != user:
             raise PermissionDenied("You can only add items to your own collections.")
 
-        serializer.save()
+        item = serializer.save()
+
+        NotificationService().create_item_for_followers(item=item)
+
 
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)

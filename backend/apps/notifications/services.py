@@ -126,3 +126,37 @@ class NotificationService:
         ]
         Notification.all_objects.bulk_create(items, batch_size=1000)
         return len(items)
+    
+    @transaction.atomic
+    def create_item_for_followers(self, *, item) -> int:
+        """Notify followers about new public item in public collection."""
+        collection = item.collection
+        owner = collection.owner
+
+        if collection.privacy != "public":
+            return 0
+        if item.privacy != "public":
+            return 0
+
+        from apps.accounts.models import Follow
+
+        follower_ids = list(
+            Follow.objects.filter(following=owner).values_list("follower_id", flat=True)
+        )
+        if not follower_ids:
+            return 0
+
+        notifications = [
+            Notification(
+                for_user_id=follower_id,
+                type=Notification.Type.ITEM_CREATE,
+                info={
+                    "user_id": str(owner.id),
+                    "collection_id": str(collection.id),
+                    "item_id": str(item.id),
+                },
+            )
+            for follower_id in follower_ids
+        ]
+        Notification.all_objects.bulk_create(notifications, batch_size=1000)
+        return len(notifications)
