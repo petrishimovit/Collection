@@ -60,4 +60,20 @@ class NotificationService:
         ]
         Notification.all_objects.bulk_create(items, batch_size=1000)
         return len(items)
+    
+    @transaction.atomic
+    def create_post_reaction(self, *, post, actor, reaction_type: str) -> Notification | None:
+        """Create a reaction notification for post author."""
+        author = getattr(post, "author", None)
+        if author is None or author == actor:
+            return None
 
+        return self.create(
+            for_user=author,
+            type=Notification.Type.POST_LIKE,
+            info={
+                "user_id": str(actor.pk),
+                "post_id": str(post.pk),
+                "reaction_type": reaction_type,
+            },
+        )

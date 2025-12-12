@@ -216,11 +216,27 @@ class PostViewSet(viewsets.ModelViewSet):
         """Toggle like or dislike on a post."""
         post = self.get_object()
         reaction_type = request.data.get("type")
+
         data = PostService.toggle_reaction(
             post=post,
             user=request.user,
             reaction_type=reaction_type,
         )
+
+        is_added = False
+        if isinstance(data, dict):
+            if data.get("active") is True:
+                is_added = True
+            if data.get("status") in {"added", "created", "on", "liked", "disliked"}:
+                is_added = True
+
+        if is_added:
+            NotificationService().create_post_reaction(
+                post=post,
+                actor=request.user,
+                reaction_type=str(reaction_type),
+            )
+
         return response.Response(data, status=status.HTTP_200_OK)
 
     @extend_schema(

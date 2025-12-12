@@ -23,7 +23,9 @@ from apps.posts.services.comment import CommentService
                 },
             }
         },
+        tags=["Posts"]
     ),
+    
 )
 class CommentViewSet(viewsets.ViewSet):
     """Comment endpoints."""
