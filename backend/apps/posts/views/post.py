@@ -30,6 +30,8 @@ from apps.posts.selectors.post import (
     search_posts_qs,
 )
 
+from apps.notifications.services import NotificationService
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -134,6 +136,7 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         post = serializer.save(author=request.user)
+        NotificationService().create_post_for_followers(author=request.user, post=post)
         out = PostDetailSerializer(post, context={"request": request})
         return response.Response(out.data, status=status.HTTP_201_CREATED)
 

@@ -37,3 +37,27 @@ class NotificationService:
             type=Notification.Type.FOLLOW,
             info={"user_id": str(follower_user.pk)},
         )
+    
+    @transaction.atomic
+    def create_post_for_followers(self, *, author, post) -> int:
+        """Create post notifications for all author followers."""
+        from apps.accounts.models import Follow
+
+        follower_ids = list(
+            Follow.objects.filter(following=author).values_list("follower_id", flat=True)
+        )
+        if not follower_ids:
+            return 0
+
+        items = [
+            Notification(
+                for_user_id=follower_id,
+                type=Notification.Type.POST_CREATE,
+                info={"user_id": str(author.pk), "post_id": str(post.pk)},
+                is_checked=False,
+            )
+            for follower_id in follower_ids
+        ]
+        Notification.all_objects.bulk_create(items, batch_size=1000)
+        return len(items)
+
