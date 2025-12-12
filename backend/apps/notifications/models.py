@@ -35,6 +35,8 @@ class Notification(BaseModel):
         db_index=True,
     )
 
+    info = models.JSONField(default=dict, blank=True)
+
     class Meta(BaseModel.Meta):
         indexes = [
             models.Index(fields=["for_user", "is_checked", "-created_at"]),
