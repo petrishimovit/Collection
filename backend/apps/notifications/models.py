@@ -12,8 +12,9 @@ class Notification(BaseModel):
     class Type(models.TextChoices):
         FOLLOW = "follow"
         POST_CREATE = "post"
-        POST_LIKE = ""
+        POST_LIKE = "post_like"
         COMMENT_CREATE = "comment_create"
+        COMMENT_LIKE = "comment_like"
         ITEM_CREATE = "item_create"
         
 

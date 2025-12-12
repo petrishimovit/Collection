@@ -7,6 +7,8 @@ from apps.posts.models import Comment, CommentReaction
 from apps.posts.serializers import ReactionRequestSerializer
 from apps.posts.services.comment import CommentService
 
+from apps.notifications.services import NotificationService
+
 
 @extend_schema_view(
     react=extend_schema(
@@ -37,7 +39,7 @@ class CommentViewSet(viewsets.ViewSet):
         detail=True,
         methods=["post"],
         permission_classes=[permissions.IsAuthenticated],
-    )
+ )
     def react(self, request, pk=None):
         """Toggle reaction."""
         comment = get_object_or_404(self.queryset, pk=pk)
@@ -51,4 +53,11 @@ class CommentViewSet(viewsets.ViewSet):
             user=request.user,
             reaction_type=reaction_type,
         )
+
+        if reaction_type == CommentReaction.LIKE and data.get("status") in {"added", "changed"}:
+            NotificationService().create_comment_like(
+                comment=comment,
+                actor=request.user,
+            )
+
         return response.Response(data)

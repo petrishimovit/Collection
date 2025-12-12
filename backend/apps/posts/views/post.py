@@ -154,7 +154,7 @@ class PostViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="List or create comments",
         description="GET: list comments for a post. POST: create a new comment.",
-        request={"POST": CommentSerializer},
+        request=CommentSerializer,
         responses={200: CommentSerializer(many=True), 201: CommentSerializer},
         tags=["Posts"],
         

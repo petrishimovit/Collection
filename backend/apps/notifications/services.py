@@ -77,3 +77,22 @@ class NotificationService:
                 "reaction_type": reaction_type,
             },
         )
+    
+    @transaction.atomic
+    def create_comment_like(self, *, comment, actor) -> Notification | None:
+        """Create comment-like notification for comment author."""
+        author = getattr(comment, "author", None)
+        actor_id = getattr(actor, "id", None)
+
+        if author is None or actor_id is None or author.id == actor_id:
+            return None
+
+        return self.create(
+            for_user=author,
+            type=Notification.Type.COMMENT_LIKE,
+            info={
+                "user_id": str(actor_id),
+                "comment_id": str(comment.pk),
+                "post_id": str(comment.post_id),
+            },
+        )
