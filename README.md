@@ -68,5 +68,5 @@ as well -- and thus more supported by SimpleJWT.
 ---
 ### License
 
-This repository is licensed under the 
+This repository is licensed under the
 [MIT License](https://github.com/SimpleJWT/drf-SimpleJWT-server-template/blob/master/LICENSE).
