@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ main ]
+
   workflow_dispatch:
 
 jobs:
@@ -34,9 +34,23 @@ jobs:
           black --check .
           isort --check-only .
 
-      - name: Run tests
+      - name: Run tests with coverage
         working-directory: backend
         env:
           DJANGO_SETTINGS_MODULE: config.settings_test
           SECRET_KEY: test
-        run: pytest -q
+          DATABASE_URL: sqlite:///./db.sqlite3
+        run: |
+          pytest \
+            --cov=apps \
+            --cov=core \
+            --cov=config \
+            --cov-report=term-missing \
+            --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: backend/coverage.xml
+          flags: backend
+          fail_ci_if_error: true
