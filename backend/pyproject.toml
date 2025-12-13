@@ -7,7 +7,6 @@ readme = "README.md"
 requires-python = ">=3.12,<4.0"
 
 dependencies = [
-
   "django (>=4.2,<5.0)",
   "djangorestframework (>=3.14,<3.16)",
   "djangorestframework-simplejwt (>=5.3,<6.0)",
@@ -23,6 +22,7 @@ dependencies = [
   "dj-database-url (>=3.0.1,<4.0.0)",
   "python-dotenv (>=1.2.1,<2.0.0)",
   "django-filter (==24.3)",
+  "gunicorn (>=23.0.0,<24.0.0)",
 ]
 
 [tool.poetry.group.ci.dependencies]

@@ -35,7 +35,7 @@ services:
       dockerfile: backend/Dockerfile
     container_name: collection_web
     working_dir: /app
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py migrate && gunicorn -c ops/gunicorn/gunicorn.conf.py config.wsgi:application"
     env_file: .env
     depends_on:
       collection-postgres:
