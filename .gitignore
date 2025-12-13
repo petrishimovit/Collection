@@ -129,6 +129,6 @@ media/
 
 
 # Celery-Beat DB
-backend/celerybeat-schedule.db
+celerybeat-schedule.db
 
 25.2,
