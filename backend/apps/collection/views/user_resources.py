@@ -1,16 +1,15 @@
-from rest_framework import generics, permissions, filters
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import filters, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-from drf_spectacular.types import OpenApiTypes
-
-from apps.collection.serializers.collection import CollectionSerializer
-from apps.collection.serializers.item import ItemSerializer
+from apps.accounts.services.user import UserService
 from apps.collection.pagination import DefaultPageNumberPagination
 from apps.collection.selectors.collection import get_collections_for_user_profile
 from apps.collection.selectors.item import get_user_items_for_viewer
-from apps.accounts.services.user import UserService
+from apps.collection.serializers.collection import CollectionSerializer
+from apps.collection.serializers.item import ItemSerializer
 
 
 @extend_schema(

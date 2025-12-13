@@ -6,38 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('collection', '0001_initial'),
+        ("collection", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='collection',
-            name='is_active',
+            model_name="collection",
+            name="is_active",
             field=models.BooleanField(db_index=True, default=True),
         ),
         migrations.AddField(
-            model_name='item',
-            name='is_active',
+            model_name="item",
+            name="is_active",
             field=models.BooleanField(db_index=True, default=True),
         ),
         migrations.AddField(
-            model_name='itemimage',
-            name='is_active',
+            model_name="itemimage",
+            name="is_active",
             field=models.BooleanField(db_index=True, default=True),
         ),
         migrations.AlterField(
-            model_name='collection',
-            name='updated_at',
+            model_name="collection",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='item',
-            name='updated_at',
+            model_name="item",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='itemimage',
-            name='updated_at',
+            model_name="itemimage",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

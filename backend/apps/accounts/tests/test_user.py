@@ -2,7 +2,6 @@ import pytest
 
 from apps.accounts.models import User
 
-
 pytestmark = pytest.mark.django_db
 
 
@@ -27,7 +26,7 @@ def test_user_register_and_cannot_login_while_inactive(api_client):
     assert User.objects.filter(email=email).exists()
 
     user = User.objects.get(email=email)
-    
+
     assert user.is_active is False
 
     # Act
@@ -39,6 +38,6 @@ def test_user_register_and_cannot_login_while_inactive(api_client):
 
     # Assert
     assert token_response.status_code == 401
-    
+
     assert token_response.data["detail"] == "No active account found with the given credentials"
     assert getattr(token_response.data["detail"], "code", None) == "no_active_account"

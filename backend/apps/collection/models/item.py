@@ -1,6 +1,7 @@
 from django.db import models
 
 from core.models import BaseModel
+
 from .collection import Collection
 
 
@@ -53,7 +54,7 @@ class Item(BaseModel):
     )
 
     privacy = models.CharField(
-        max_length=32,                      
+        max_length=32,
         choices=PRIVACY_CHOICES,
         default=PRIVACY_PUBLIC,
         db_index=True,
@@ -101,8 +102,8 @@ class Item(BaseModel):
     )
 
     hidden_fields = models.JSONField(
-    default=list,
-    blank=True,
+        default=list,
+        blank=True,
     )
 
     is_favorite = models.BooleanField(

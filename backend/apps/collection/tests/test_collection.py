@@ -1,8 +1,8 @@
 import pytest
 from django.contrib.auth import get_user_model
 
-from apps.collection.models import Collection, Item
 from apps.accounts.models import Follow
+from apps.collection.models import Collection, Item
 
 pytestmark = pytest.mark.django_db
 
@@ -203,7 +203,7 @@ def test_collections_partial_update_only_owner_can_edit(api_client):
 
     col = create_collection(owner, "Old name", Collection.PRIVACY_PUBLIC)
 
-    # Act 
+    # Act
     api_client.force_authenticate(other)
     res_forbidden = api_client.patch(
         f"{COLLECTION_LIST_URL}{col.id}/",
@@ -224,7 +224,6 @@ def test_collections_partial_update_only_owner_can_edit(api_client):
         format="json",
     )
 
-   
     assert res_ok.status_code in (200, 405)
     col.refresh_from_db()
     if res_ok.status_code == 200:

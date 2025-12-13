@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from .registry import GameRegistry, REGISTRY
+from .registry import REGISTRY, GameRegistry
 
 
 class GameSearchService:

@@ -1,5 +1,7 @@
 from uuid import uuid4
+
 from django.db import models
+
 from core.models import BaseModel
 
 
@@ -18,6 +20,7 @@ class PostImage(BaseModel):
     """
     Image attached to a post.
     """
+
     post = models.ForeignKey(
         "posts.Post",
         on_delete=models.CASCADE,

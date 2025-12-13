@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+
 from core.models import BaseModel
 
 
@@ -7,8 +8,11 @@ class Comment(BaseModel):
     """
     User comment on a post.
     """
+
     post = models.ForeignKey("posts.Post", on_delete=models.CASCADE, related_name="comments")
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments"
+    )
     text = models.CharField(max_length=400, blank=True)
 
     class Meta:

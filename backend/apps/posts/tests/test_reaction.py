@@ -1,7 +1,7 @@
 import pytest
 
 from apps.accounts.models import User
-from apps.posts.models import Post, Comment, PostReaction, CommentReaction
+from apps.posts.models import Comment, CommentReaction, Post, PostReaction
 
 pytestmark = pytest.mark.django_db
 

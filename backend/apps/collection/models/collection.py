@@ -27,7 +27,7 @@ class Collection(BaseModel):
         related_name="collections",
     )
     name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)  
+    description = models.TextField(blank=True)
     image = models.ImageField(
         upload_to=collection_image_path,
         blank=True,
@@ -35,13 +35,13 @@ class Collection(BaseModel):
     )
 
     privacy = models.CharField(
-        max_length=32,                      
+        max_length=32,
         choices=PRIVACY_CHOICES,
         default=PRIVACY_PUBLIC,
         db_index=True,
     )
 
-    views_count = models.PositiveIntegerField(  
+    views_count = models.PositiveIntegerField(
         default=0,
     )
 

@@ -1,36 +1,34 @@
-from rest_framework import viewsets, permissions, response, status, decorators,serializers
-from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
-from rest_framework.filters import OrderingFilter
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
+    OpenApiParameter,
     extend_schema,
     extend_schema_view,
-    OpenApiParameter,
     inline_serializer,
 )
-
-from drf_spectacular.types import OpenApiTypes
-
-from apps.posts.models import PostReaction
-from apps.posts.permissions import IsAuthorOrReadOnly
-from apps.posts.pagination import PostPagination, CommentPagination
-from apps.posts.serializers import (
-    PostListSerializer,
-    PostDetailSerializer,
-    CommentSerializer,
-    ReactionRequestSerializer,
-    PostCreateSerializer,
-)
-from apps.posts.services.post import PostService
-from apps.posts.selectors.post import (
-    comments_qs,
-    posts_list_qs,
-    liked_by_user_qs,
-    feed_qs,
-    search_posts_qs,
-)
+from rest_framework import decorators, permissions, response, serializers, status, viewsets
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.filters import OrderingFilter
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
 from apps.notifications.services import NotificationService
+from apps.posts.models import PostReaction
+from apps.posts.pagination import CommentPagination, PostPagination
+from apps.posts.permissions import IsAuthorOrReadOnly
+from apps.posts.selectors.post import (
+    comments_qs,
+    feed_qs,
+    liked_by_user_qs,
+    posts_list_qs,
+    search_posts_qs,
+)
+from apps.posts.serializers import (
+    CommentSerializer,
+    PostCreateSerializer,
+    PostDetailSerializer,
+    PostListSerializer,
+    ReactionRequestSerializer,
+)
+from apps.posts.services.post import PostService
 
 
 @extend_schema_view(
@@ -59,21 +57,20 @@ from apps.notifications.services import NotificationService
         responses={200: PostDetailSerializer},
         tags=["Posts"],
     ),
-    create = extend_schema(
-    summary="Create a post",
-    request=inline_serializer(
-        name="PostCreateRequest",
-        fields={
-            "text": serializers.CharField(),
-            "images": serializers.ImageField(
-                required=False,
-            
-            ),
-        },
+    create=extend_schema(
+        summary="Create a post",
+        request=inline_serializer(
+            name="PostCreateRequest",
+            fields={
+                "text": serializers.CharField(),
+                "images": serializers.ImageField(
+                    required=False,
+                ),
+            },
+        ),
+        responses={201: PostDetailSerializer},
+        tags=["Posts"],
     ),
-    responses={201: PostDetailSerializer},
-    tags=["Posts"],
-),
     destroy=extend_schema(
         summary="Delete a post",
         description="Soft delete a post created by the authenticated user.",
@@ -157,7 +154,6 @@ class PostViewSet(viewsets.ModelViewSet):
         request=CommentSerializer,
         responses={200: CommentSerializer(many=True), 201: CommentSerializer},
         tags=["Posts"],
-        
     )
     @decorators.action(
         detail=True,
@@ -165,7 +161,7 @@ class PostViewSet(viewsets.ModelViewSet):
         url_path="comments",
         pagination_class=CommentPagination,
         permission_classes=[permissions.IsAuthenticatedOrReadOnly],
-        filter_backends=[], 
+        filter_backends=[],
     )
     def comments(self, request, pk=None):
         """List or create comments for the post."""

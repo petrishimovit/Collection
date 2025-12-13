@@ -36,3 +36,12 @@ black = "^24.0"
 isort = "^5.13"
 pylint = "^3.0"
 pylint-django = "^2.5"
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["apps", "core", "config", "server"]

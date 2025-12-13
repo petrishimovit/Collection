@@ -12,7 +12,4 @@ class ItemFilter(filters.FilterSet):
 
     class Meta:
         model = Item
-        fields = (
-            "for_sale",
-            
-        )
+        fields = ("for_sale",)

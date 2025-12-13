@@ -6,30 +6,30 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('posts', '0001_initial'),
+        ("posts", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='comment',
-            name='body',
+            model_name="comment",
+            name="body",
         ),
         migrations.RemoveField(
-            model_name='post',
-            name='body',
+            model_name="post",
+            name="body",
         ),
         migrations.RemoveField(
-            model_name='post',
-            name='title',
+            model_name="post",
+            name="title",
         ),
         migrations.AddField(
-            model_name='comment',
-            name='text',
+            model_name="comment",
+            name="text",
             field=models.CharField(blank=True, max_length=400),
         ),
         migrations.AddField(
-            model_name='post',
-            name='text',
+            model_name="post",
+            name="text",
             field=models.CharField(blank=True, max_length=400),
         ),
     ]

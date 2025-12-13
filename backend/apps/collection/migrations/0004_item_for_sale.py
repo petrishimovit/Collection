@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('collection', '0003_item_hidden_fields'),
+        ("collection", "0003_item_hidden_fields"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='item',
-            name='for_sale',
+            model_name="item",
+            name="for_sale",
             field=models.BooleanField(default=False),
         ),
     ]

@@ -1,8 +1,8 @@
 from .games import GameSearchView
 from .pricecharting import (
-    PricechartingSearchView,
-    PricechartingItemView,
     PriceChartingConnectViewSet,
+    PricechartingItemView,
+    PricechartingSearchView,
 )
 
 __all__ = [

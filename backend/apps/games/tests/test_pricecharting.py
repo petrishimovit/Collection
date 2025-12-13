@@ -1,14 +1,13 @@
 from datetime import date
-from django.urls import reverse
 
 import pytest
+from django.urls import reverse
 
-from apps.games.services import pricecharting as pricecharting_module
 from apps.games.integrations.pricecharting.client import PricechartingClient
 from apps.games.integrations.pricecharting.schemas import SearchItem
 from apps.games.models import PriceChartingConnect
+from apps.games.services import pricecharting as pricecharting_module
 from apps.games.services.pricecharting import PricechartingService
-
 
 pytestmark = pytest.mark.django_db
 
@@ -93,7 +92,6 @@ def test_snapshot_prices_migrates_legacy_list_history(patch_pricecharting):
     PricechartingService.snapshot_prices(connect=connect)
     connect.refresh_from_db()
 
-   
     assert isinstance(connect.history, dict)
     assert "2024-01-01" in connect.history
     assert "2024-01-10" in connect.history

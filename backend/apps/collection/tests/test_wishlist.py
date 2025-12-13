@@ -1,10 +1,10 @@
-import pytest
 from datetime import timedelta
 
+import pytest
 from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.collection.models import WishList, Collection, Item
+from apps.collection.models import Collection, Item, WishList
 
 pytestmark = pytest.mark.django_db
 
@@ -83,12 +83,8 @@ def test_user_wishlist_list_supports_ordering(api_client):
         title="new",
     )
 
-    WishList.objects.filter(pk=fav_old.pk).update(
-        created_at=timezone.now() - timedelta(days=1)
-    )
-    WishList.objects.filter(pk=fav_new.pk).update(
-        created_at=timezone.now()
-    )
+    WishList.objects.filter(pk=fav_old.pk).update(created_at=timezone.now() - timedelta(days=1))
+    WishList.objects.filter(pk=fav_new.pk).update(created_at=timezone.now())
 
     url = f"/users/{str(user.id)}/wishlist/"
 
@@ -128,7 +124,7 @@ def test_create_wishlist_item_returns_400_for_now(api_client):
 
 
 def test_create_wishlist_collection_returns_400_for_now(api_client):
-    # Arrange 
+    # Arrange
     user = create_user("user@example.com", "user")
     owner = create_user("owner@example.com", "owner")
 

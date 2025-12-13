@@ -18,7 +18,6 @@ class GameRegistry:
         self._loaded = False
         self._lock = RLock()
 
-
     def _iter_file(self, p: Path) -> Iterable[Dict[str, Any]]:
         """
         iterate valid dict records from a json file
@@ -27,13 +26,13 @@ class GameRegistry:
             data = f.read().strip()
             if not data:
                 return
-           
+
             if data.lstrip().startswith("["):
                 arr = json.loads(data)
                 for o in arr:
                     if isinstance(o, dict):
                         yield o
-            
+
             else:
                 for line in data.splitlines():
                     line = line.strip()
@@ -54,9 +53,7 @@ class GameRegistry:
         platform = str(rec.get("Platform", "")).lower()
         dev = str(rec.get("Dev", "")).lower()
         publisher = str(rec.get("Publisher", "")).lower()
-        blob = " | ".join(
-            [game, platform, dev, publisher, str(rec.get("Year", ""))]
-        )
+        blob = " | ".join([game, platform, dev, publisher, str(rec.get("Year", ""))])
         return {
             "game": game,
             "platform": platform,

@@ -1,9 +1,9 @@
-import pytest
 from datetime import datetime, timedelta
 
+import pytest
 from django.utils import timezone
 
-from apps.accounts.models import User, Follow
+from apps.accounts.models import Follow, User
 from apps.collection.models import Collection, Item
 
 pytestmark = pytest.mark.django_db

@@ -3,18 +3,15 @@ from typing import Optional
 from django.db import models
 from django.db.models import Q
 
-from apps.collection.models import Collection, Item
 from apps.accounts.models import Follow
+from apps.collection.models import Collection, Item
 
 
 def _base_items_qs():
     """
     Base queryset for items with useful selects/prefetches.
     """
-    return (
-        Item.objects.select_related("collection", "collection__owner")
-        .prefetch_related("images")
-    )
+    return Item.objects.select_related("collection", "collection__owner").prefetch_related("images")
 
 
 def get_items_for_user(user) -> models.QuerySet[Item]:
@@ -49,27 +46,18 @@ def get_items_for_user(user) -> models.QuerySet[Item]:
             privacy=Item.PRIVACY_PUBLIC,
         )
 
-    owner_follows_user_q = Q(
-        collection__owner__following_relations__following=user
-    )
+    owner_follows_user_q = Q(collection__owner__following_relations__following=user)
 
     own_items_q = Q(collection__owner=user)
 
-    public_collections_q = (
-        Q(collection__privacy=Collection.PRIVACY_PUBLIC)
-        & (
-            Q(privacy=Item.PRIVACY_PUBLIC)
-            | (Q(privacy=Item.PRIVACY_FOLLOWING) & owner_follows_user_q)
-        )
+    public_collections_q = Q(collection__privacy=Collection.PRIVACY_PUBLIC) & (
+        Q(privacy=Item.PRIVACY_PUBLIC) | (Q(privacy=Item.PRIVACY_FOLLOWING) & owner_follows_user_q)
     )
 
     following_collections_q = (
         Q(collection__privacy=Collection.PRIVACY_FOLLOWING)
         & owner_follows_user_q
-        & (
-            Q(privacy=Item.PRIVACY_PUBLIC)
-            | Q(privacy=Item.PRIVACY_FOLLOWING)
-        )
+        & (Q(privacy=Item.PRIVACY_PUBLIC) | Q(privacy=Item.PRIVACY_FOLLOWING))
     )
 
     visible_q = own_items_q | public_collections_q | following_collections_q

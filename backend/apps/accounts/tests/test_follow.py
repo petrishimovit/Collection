@@ -1,8 +1,7 @@
 import pytest
 
-from apps.accounts.models import User, Follow
+from apps.accounts.models import Follow, User
 from apps.accounts.services.user import UserService
-
 
 pytestmark = pytest.mark.django_db
 

@@ -1,31 +1,26 @@
 from django.db import models
-from rest_framework import viewsets, permissions, status
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
-from drf_spectacular.utils import (
-    extend_schema,
-    extend_schema_view,
-    OpenApiParameter,
-)
-from drf_spectacular.types import OpenApiTypes
-
 from apps.collection.models import Collection
-from apps.collection.serializers.collection import CollectionSerializer
-from apps.collection.serializers.item import ItemSerializer
+from apps.collection.pagination import DefaultPageNumberPagination
 from apps.collection.permissions.collection import IsCollectionOwnerOrReadOnly
 from apps.collection.selectors.collection import (
-    get_public_collections,
-    get_collections_for_user,
-    get_user_collections,
     get_collection_for_user,
+    get_collections_for_user,
     get_feed_collections_for_user,
+    get_public_collections,
+    get_user_collections,
 )
 from apps.collection.selectors.item import get_collection_items_for_user
-from apps.collection.pagination import DefaultPageNumberPagination
-
+from apps.collection.serializers.collection import CollectionSerializer
+from apps.collection.serializers.item import ItemSerializer
 from apps.notifications.services import NotificationService
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -161,9 +156,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
         if instance is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        Collection.objects.filter(pk=instance.pk).update(
-            views_count=models.F("views_count") + 1
-        )
+        Collection.objects.filter(pk=instance.pk).update(views_count=models.F("views_count") + 1)
         instance.refresh_from_db(fields=["views_count"])
 
         serializer = self.get_serializer(instance)
@@ -172,9 +165,9 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         collection = serializer.save(owner=self.request.user)
         NotificationService().create_collection_for_followers(
-        owner=self.request.user,
-        collection=collection,
-    )
+            owner=self.request.user,
+            collection=collection,
+        )
 
     def update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -327,10 +320,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
         qs = get_collections_for_user(request.user)
 
         if q:
-            qs = qs.filter(
-                models.Q(name__icontains=q)
-                | models.Q(description__icontains=q)
-            )
+            qs = qs.filter(models.Q(name__icontains=q) | models.Q(description__icontains=q))
 
         qs = self._apply_is_favorite_filter(request, qs)
         qs = self.filter_queryset(qs)

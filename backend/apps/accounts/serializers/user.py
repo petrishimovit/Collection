@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+
 from apps.accounts.models import User
+
 from .profile import ProfileBaseSerializer, ProfileDetailSerializer
 
 User = get_user_model()
@@ -74,9 +76,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     """
 
     email = serializers.EmailField(
-        validators=[
-            UniqueValidator(queryset=User.objects.all(), message="Email already in use.")
-        ]
+        validators=[UniqueValidator(queryset=User.objects.all(), message="Email already in use.")]
     )
     password = serializers.CharField(write_only=True, min_length=8)
 
@@ -88,7 +88,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         """Create a new user with hashed password."""
         password = validated_data.pop("password")
         user = User(**validated_data)
-        user.is_active = False 
+        user.is_active = False
         user.set_password(password)
         user.save()
         return user

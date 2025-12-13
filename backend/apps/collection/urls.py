@@ -1,17 +1,17 @@
-from rest_framework.routers import DefaultRouter
 from django.urls import path
+from rest_framework.routers import DefaultRouter
 
 from apps.collection.views.collection import CollectionViewSet
 from apps.collection.views.item import ItemViewSet
-from apps.collection.views.wishlist import (
-    UserWishListListView,
-    MyWishListCreateView,
-    WishListDestroyView,
-)
 from apps.collection.views.user_resources import (
     UserCollectionsListView,
-    UserItemsListView,
     UserHeatmapView,
+    UserItemsListView,
+)
+from apps.collection.views.wishlist import (
+    MyWishListCreateView,
+    UserWishListListView,
+    WishListDestroyView,
 )
 
 router = DefaultRouter()

@@ -2,7 +2,6 @@ import pytest
 
 from apps.accounts.models import User
 
-
 pytestmark = pytest.mark.django_db
 
 
@@ -46,15 +45,10 @@ def test_user_update_profile(auth_client):
         f"/users/{me['id']}/profile/",
         {
             "display_name": "New Petr",
-            "profile": 
-            {
-            "bio": "Updated",
-            "website": "https://example.com"
-            }
+            "profile": {"bio": "Updated", "website": "https://example.com"},
         },
-
-        format='json')
+        format="json",
+    )
 
     # Assert
     assert response.status_code == 200
-    

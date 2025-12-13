@@ -1,8 +1,8 @@
-from rest_framework.viewsets import GenericViewSet
 from rest_framework.mixins import ListModelMixin
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import GenericViewSet
 
 
 class PingViewSet(GenericViewSet, ListModelMixin):
@@ -12,11 +12,9 @@ class PingViewSet(GenericViewSet, ListModelMixin):
     applications behind ALB which does default 30
     second ping/health checks.
     """
+
     permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-        
-        return Response(
-            data={"id": request.user.id},
-            status=HTTP_200_OK
-        )
+
+        return Response(data={"id": request.user.id}, status=HTTP_200_OK)

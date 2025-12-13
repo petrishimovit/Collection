@@ -1,12 +1,13 @@
 """
 Django settings 
 """
-import os
-from pathlib import Path
-from datetime import timedelta
-from dotenv import load_dotenv
-import dj_database_url
 
+import os
+from datetime import timedelta
+from pathlib import Path
+
+import dj_database_url
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -43,7 +44,7 @@ LOCAL_APPS = [
     "apps.collection",
     "apps.posts",
     "apps.games",
-    "apps.notifications"
+    "apps.notifications",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -60,9 +61,7 @@ REST_FRAMEWORK = {
 }
 
 
-JWT_KEY = os.getenv(
-    "JWT_KEY", "b=72^ado*%1(v3r7rga9ch)03xr=d*f)lroz94kosf!61((9=i"
-)
+JWT_KEY = os.getenv("JWT_KEY", "b=72^ado*%1(v3r7rga9ch)03xr=d*f)lroz94kosf!61((9=i")
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
@@ -122,8 +121,6 @@ DATABASES = {
 }
 
 
-
-
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -144,7 +141,7 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True  
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ORIGIN_WHITELIST = []
 
 
@@ -152,7 +149,7 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Collectioner API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    'COMPONENT_SPLIT_REQUEST': True
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 

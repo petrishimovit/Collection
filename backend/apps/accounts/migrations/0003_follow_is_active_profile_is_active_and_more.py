@@ -6,33 +6,33 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0002_remove_follow_accounts_fo_followe_7c063a_idx_and_more'),
+        ("accounts", "0002_remove_follow_accounts_fo_followe_7c063a_idx_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='follow',
-            name='is_active',
+            model_name="follow",
+            name="is_active",
             field=models.BooleanField(db_index=True, default=True),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='is_active',
+            model_name="profile",
+            name="is_active",
             field=models.BooleanField(db_index=True, default=True),
         ),
         migrations.AlterField(
-            model_name='follow',
-            name='updated_at',
+            model_name="follow",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='updated_at',
+            model_name="profile",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='updated_at',
+            model_name="user",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

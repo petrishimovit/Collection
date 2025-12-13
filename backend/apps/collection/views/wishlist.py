@@ -1,13 +1,12 @@
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import OrderingFilter
 
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
-from drf_spectacular.types import OpenApiTypes
-
 from apps.collection.models import WishList
-from apps.collection.serializers.wishlist import WishListSerializer
 from apps.collection.pagination import DefaultPageNumberPagination
+from apps.collection.serializers.wishlist import WishListSerializer
 
 
 @extend_schema_view(

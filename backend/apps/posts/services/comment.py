@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Literal, Dict
+
+from typing import Dict, Literal
 
 from django.db import transaction
 from django.db.models import Count
@@ -61,8 +62,7 @@ class CommentService:
         counts_by_type = {
             row["type"]: row["c"]
             for row in (
-                CommentReaction.objects
-                .filter(comment=comment)
+                CommentReaction.objects.filter(comment=comment)
                 .values("type")
                 .annotate(c=Count("id"))
             )
