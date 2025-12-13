@@ -17,6 +17,8 @@ from apps.accounts.serializers.user import (
 from apps.accounts.serializers.profile import ProfileBaseSerializer, ProfileWriteSerializer
 from apps.accounts.services.user import UserService
 
+from apps.notifications.services import NotificationService
+
 User = get_user_model()
 
 
@@ -79,6 +81,13 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
             if str(e) == "cannot_follow_self":
                 return response.Response({"detail": "Cannot follow yourself."}, status=400)
             return response.Response({"detail": "Bad request."}, status=400)
+
+        followed_statuses = {"followed", "following", "created", "on"}
+        is_followed = getattr(res, "status", None) in followed_statuses or bool(getattr(res, "is_following", False))
+
+        if is_followed:
+            NotificationService().create_follow(target_user=target, follower_user=request.user)
+
         return response.Response({"status": res.status}, status=status.HTTP_200_OK)
 
     @extend_schema(

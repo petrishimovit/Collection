@@ -25,6 +25,7 @@ from apps.collection.selectors.collection import (
 from apps.collection.selectors.item import get_collection_items_for_user
 from apps.collection.pagination import DefaultPageNumberPagination
 
+from apps.notifications.services import NotificationService
 
 @extend_schema_view(
     list=extend_schema(
@@ -169,7 +170,11 @@ class CollectionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        collection = serializer.save(owner=self.request.user)
+        NotificationService().create_collection_for_followers(
+        owner=self.request.user,
+        collection=collection,
+    )
 
     def update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)

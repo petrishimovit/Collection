@@ -4,7 +4,7 @@ from django.db import models
 from core.models import BaseModel
 
 
-def collection_image_path(instance, filename):
+def collection_image_path(instance, filename) -> str:
     return f"collections/{instance.owner_id}/{instance.id}/{filename}"
 
 

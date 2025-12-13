@@ -30,6 +30,8 @@ from apps.posts.selectors.post import (
     search_posts_qs,
 )
 
+from apps.notifications.services import NotificationService
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -134,6 +136,7 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         post = serializer.save(author=request.user)
+        NotificationService().create_post_for_followers(author=request.user, post=post)
         out = PostDetailSerializer(post, context={"request": request})
         return response.Response(out.data, status=status.HTTP_201_CREATED)
 
@@ -151,7 +154,7 @@ class PostViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="List or create comments",
         description="GET: list comments for a post. POST: create a new comment.",
-        request={"POST": CommentSerializer},
+        request=CommentSerializer,
         responses={200: CommentSerializer(many=True), 201: CommentSerializer},
         tags=["Posts"],
         
@@ -213,11 +216,27 @@ class PostViewSet(viewsets.ModelViewSet):
         """Toggle like or dislike on a post."""
         post = self.get_object()
         reaction_type = request.data.get("type")
+
         data = PostService.toggle_reaction(
             post=post,
             user=request.user,
             reaction_type=reaction_type,
         )
+
+        is_added = False
+        if isinstance(data, dict):
+            if data.get("active") is True:
+                is_added = True
+            if data.get("status") in {"added", "created", "on", "liked", "disliked"}:
+                is_added = True
+
+        if is_added:
+            NotificationService().create_post_reaction(
+                post=post,
+                actor=request.user,
+                reaction_type=str(reaction_type),
+            )
+
         return response.Response(data, status=status.HTTP_200_OK)
 
     @extend_schema(
