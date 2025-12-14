@@ -1,11 +1,10 @@
-from rest_framework.mixins import ListModelMixin
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import ViewSet
 
 
-class PingViewSet(GenericViewSet, ListModelMixin):
+class PingViewSet(ViewSet):
     """
     Helpful class for internal health checks
     for when your server deploys. Typical of AWS
@@ -13,8 +12,7 @@ class PingViewSet(GenericViewSet, ListModelMixin):
     second ping/health checks.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
-
-        return Response(data={"id": request.user.id}, status=HTTP_200_OK)
+        return Response(data={"status": "ok"}, status=HTTP_200_OK)
