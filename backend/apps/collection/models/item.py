@@ -1,6 +1,7 @@
 from django.db import models
 
 from core.models import BaseModel
+from core.utils.images import compress_webp, thumb_webp
 
 from .collection import Collection
 
@@ -126,7 +127,22 @@ class ItemImage(BaseModel):
         on_delete=models.CASCADE,
         related_name="images",
     )
+
     image = models.ImageField(upload_to=item_image_path)
+
+    preview_sm = models.ImageField(
+        upload_to=item_image_path,
+        blank=True,
+        null=True,
+        editable=False,
+    )
+    preview_md = models.ImageField(
+        upload_to=item_image_path,
+        blank=True,
+        null=True,
+        editable=False,
+    )
+
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -134,3 +150,28 @@ class ItemImage(BaseModel):
 
     def __str__(self):
         return f"Image for {self.item.name}"
+
+    def save(self, *args, **kwargs):
+        if self.image and (not self.pk or not self.preview_sm or not self.preview_md):
+            original_name = self.image.name
+
+            self.image = compress_webp(
+                self.image,
+                original_name=original_name,
+                max_size=(1600, 1600),
+                quality=82,
+            )
+            self.preview_sm = thumb_webp(
+                self.image,
+                original_name=original_name,
+                width=256,
+                quality=78,
+            )
+            self.preview_md = thumb_webp(
+                self.image,
+                original_name=original_name,
+                width=768,
+                quality=80,
+            )
+
+        super().save(*args, **kwargs)

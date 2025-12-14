@@ -63,6 +63,8 @@ class PostDetailSerializer(PostListSerializer):
             {
                 "id": img.id,
                 "url": img.image.url,
+                "preview_sm": img.preview_sm.url if img.preview_sm else None,
+                "preview_md": img.preview_md.url if img.preview_md else None,
                 "width": img.width,
                 "height": img.height,
             }
@@ -108,6 +110,8 @@ class PostCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         images = validated_data.pop("images", [])
         post = Post.objects.create(**validated_data)
-        if images:
-            PostImage.objects.bulk_create([PostImage(post=post, image=f) for f in images])
+
+        for f in images:
+            PostImage.objects.create(post=post, image=f)
+
         return post

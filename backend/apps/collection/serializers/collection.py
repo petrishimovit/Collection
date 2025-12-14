@@ -25,6 +25,8 @@ class CollectionSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "image",
+            "preview_sm",
+            "preview_md",
             "privacy",
             "views_count",
             "items_count",
@@ -44,5 +46,7 @@ class CollectionSerializer(serializers.ModelSerializer):
             "items_count",
             "total_current_value",
             "total_purchase_price",
+            "preview_sm",
+            "preview_md",
             "items",
         )
