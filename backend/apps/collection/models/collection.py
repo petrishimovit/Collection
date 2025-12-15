@@ -1,3 +1,6 @@
+import os
+from uuid import uuid4
+
 from django.conf import settings
 from django.db import models
 
@@ -6,7 +9,8 @@ from core.utils.images import compress_webp, thumb_webp
 
 
 def collection_image_path(instance, filename) -> str:
-    return f"collections/{instance.owner_id}/{instance.id}/{filename}"
+    ext = os.path.splitext(filename)[1].lower()
+    return f"collections/{instance.owner_id}/{uuid4().hex}{ext}"
 
 
 class Collection(BaseModel):
