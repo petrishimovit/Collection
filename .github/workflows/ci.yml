@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend:
-    runs-on: capsulaci
+    runs-on: [self-hosted, capsulaci]
 
     steps:
       - name: Checkout repository
