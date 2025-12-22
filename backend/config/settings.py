@@ -5,6 +5,7 @@ Django settings
 import os
 from datetime import timedelta
 from pathlib import Path
+from subprocess import DEVNULL
 
 import dj_database_url
 from dotenv import load_dotenv
@@ -20,6 +21,7 @@ ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
 
 DJANGO_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -88,6 +90,10 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if DEBUG:
+    MIDDLEWARE += ("whitenoise.middleware.WhiteNoiseMiddleware",)
+
 
 ROOT_URLCONF = "config.urls"
 
@@ -244,3 +250,8 @@ LOGGING = {
         },
     },
 }
+
+
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "static"]

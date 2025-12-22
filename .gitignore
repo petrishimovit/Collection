@@ -132,3 +132,7 @@ media/
 celerybeat-schedule.db
 
 25.2,
+
+
+# Django collected static
+staticfiles/

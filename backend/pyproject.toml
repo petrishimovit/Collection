@@ -26,6 +26,8 @@ dependencies = [
   "python-json-logger (>=4.0.0,<5.0.0)",
   "django-storages (>=1.14.6,<2.0.0)",
   "boto3 (>=1.42.9,<2.0.0)",
+  "django-jazzmin (>=3.0.1,<4.0.0)",
+  "whitenoise (>=6.11.0,<7.0.0)",
 ]
 
 [tool.poetry.group.ci.dependencies]
