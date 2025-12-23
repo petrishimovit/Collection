@@ -31,6 +31,7 @@ urlpatterns = [
     path("", include("apps.posts.urls")),
     path("games/", include("apps.games.urls")),
     path("", include("apps.notifications.urls")),
+    path("", include("django_prometheus.urls")),
 ]
 
 

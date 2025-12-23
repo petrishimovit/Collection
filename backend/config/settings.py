@@ -38,6 +38,7 @@ THIRD_PARTY_APPS = [
     "django_celery_beat",
     "corsheaders",
     "django_filters",
+    "django_prometheus",
 ]
 
 LOCAL_APPS = [
@@ -81,6 +82,7 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = "accounts.User"
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -89,6 +91,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 if DEBUG:
