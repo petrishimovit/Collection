@@ -30,13 +30,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image (tag only)
+      - name: build and push backend image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: backend/Dockerfile
           push: true
           tags: |
-            ghcr.io/petrishimovit/collection:${{ steps.vars.outputs.TAG }}
+            ghcr.io/petrishimovit/collection/backend:${{ steps.vars.outputs.TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
