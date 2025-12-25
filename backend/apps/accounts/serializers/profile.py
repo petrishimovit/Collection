@@ -1,5 +1,7 @@
 from typing import Mapping
+
 from rest_framework import serializers
+
 from apps.accounts.models import Profile
 
 
@@ -10,7 +12,7 @@ class ProfileBaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ("avatar", "bio", "collection_focus")
+        fields = ("avatar", "avatar_sm", "avatar_md", "bio", "collection_focus")
         read_only_fields = fields
 
 

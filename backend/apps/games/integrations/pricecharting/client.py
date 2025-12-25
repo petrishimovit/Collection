@@ -47,13 +47,10 @@ class PricechartingClient:
 
     REGION_MAP = {"all": "all", "japan": "japan", "ntsc": "ntsc", "pal": "pal"}
 
-
     @staticmethod
     def _client() -> httpx.Client:
         """Return a configured httpx.Client instance for PriceCharting requests."""
         return httpx.Client(headers=HEADERS, timeout=20, follow_redirects=True)
-
-   
 
     @staticmethod
     def _pick_results_table(soup: BeautifulSoup):
@@ -69,8 +66,7 @@ class PricechartingClient:
             th_texts = [th.get_text(" ", strip=True).lower() for th in tbl.find_all("th")]
             joined = " | ".join(th_texts)
             if "title" in joined and (
-                ("low" in joined and "mid" in joined)
-                or ("loose" in joined and "cib" in joined)
+                ("low" in joined and "mid" in joined) or ("loose" in joined and "cib" in joined)
             ):
                 return tbl
         return None
@@ -236,8 +232,6 @@ class PricechartingClient:
 
         return items
 
-   
-
     @staticmethod
     def search(q: str, region: Region = "all", limit: int = 10) -> List[SearchItem]:
         """
@@ -342,19 +336,14 @@ class PricechartingClient:
                 region = "japan"
             elif low.startswith("pal-") or "pal " in platform.lower():
                 region = "pal"
-            elif (
-                low.startswith("ntsc")
-                or "ntsc" in platform.lower()
-                or "usa" in platform.lower()
-            ):
+            elif low.startswith("ntsc") or "ntsc" in platform.lower() or "usa" in platform.lower():
                 region = "ntsc"
 
             text = soup.get_text(" ", strip=True)
 
             def pick(name_regex: str) -> Optional[Decimal]:
                 m = re.search(
-                    name_regex
-                    + r".{0,80}?\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)",
+                    name_regex + r".{0,80}?\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)",
                     text,
                     re.I | re.S,
                 )

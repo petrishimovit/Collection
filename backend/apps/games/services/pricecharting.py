@@ -8,7 +8,7 @@ from django.db import transaction
 from django.db.models import Count
 from django.utils import timezone
 
-from apps.games.integrations.pricecharting import PricechartingClient, SearchItem, Region
+from apps.games.integrations.pricecharting import PricechartingClient, Region, SearchItem
 from apps.games.models import PriceChartingConnect, normalize_url
 
 
@@ -58,7 +58,6 @@ class PricechartingService:
             "slug": data.get("slug", ""),
             "prices": data.get("prices") or {},
         }
-
 
     @classmethod
     @transaction.atomic
@@ -112,8 +111,6 @@ class PricechartingService:
             .distinct()
         )
 
- 
-
     @classmethod
     @transaction.atomic
     def snapshot_prices(
@@ -133,9 +130,8 @@ class PricechartingService:
         prices = data.get("prices") or {}
 
         now = timezone.now()
-        date_key = now.date().isoformat()  
+        date_key = now.date().isoformat()
 
-     
         connect.current = {
             "title": data.get("title", ""),
             "platform": data.get("platform", ""),
@@ -146,7 +142,6 @@ class PricechartingService:
         }
         connect.last_synced_at = now
 
-    
         hist = connect.history or {}
         if isinstance(hist, list):
             migrated = {}
@@ -154,17 +149,12 @@ class PricechartingService:
                 if isinstance(entry, dict):
                     at = entry.get("at") or entry.get("date")
                     p = entry.get("prices") or {}
-                    key = (
-                        at[:10]
-                        if isinstance(at, str) and len(at) >= 10
-                        else f"_old_{i}"
-                    )
+                    key = at[:10] if isinstance(at, str) and len(at) >= 10 else f"_old_{i}"
                     migrated[key] = p
                 else:
                     migrated[f"_old_{i}"] = entry
             hist = migrated
 
-     
         hist[date_key] = prices
         connect.history = hist
         connect.save(update_fields=["current", "history", "last_synced_at", "updated_at"])

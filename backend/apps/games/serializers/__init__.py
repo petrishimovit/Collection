@@ -1,9 +1,9 @@
 from .games import GameItemSerializer
 from .pricecharting import (
-    SearchQuerySerializer,
+    BindSerializer,
     ItemQuerySerializer,
     PriceChartingConnectSerializer,
-    BindSerializer,
+    SearchQuerySerializer,
     UnbindSerializer,
 )
 

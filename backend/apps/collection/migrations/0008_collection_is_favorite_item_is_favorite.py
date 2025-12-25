@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('collection', '0007_remove_wishlist_favorite_unique_item_per_user_and_more'),
+        ("collection", "0007_remove_wishlist_favorite_unique_item_per_user_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='collection',
-            name='is_favorite',
+            model_name="collection",
+            name="is_favorite",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='item',
-            name='is_favorite',
+            model_name="item",
+            name="is_favorite",
             field=models.BooleanField(db_index=True, default=False),
         ),
     ]

@@ -1,0 +1,16 @@
+name: deploy
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Print release tag
+        run: |
+          echo "Deploy triggered for tag:"
+          echo "TAG = ${GITHUB_REF_NAME}"

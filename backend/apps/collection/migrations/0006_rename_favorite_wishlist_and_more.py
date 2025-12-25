@@ -8,22 +8,22 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('collection', '0005_favorite_favorite_favorite_unique_item_per_user_and_more'),
+        ("collection", "0005_favorite_favorite_favorite_unique_item_per_user_and_more"),
     ]
 
     operations = [
         migrations.RenameModel(
-            old_name='Favorite',
-            new_name='WishList',
+            old_name="Favorite",
+            new_name="WishList",
         ),
         migrations.RenameIndex(
-            model_name='wishlist',
-            new_name='collection__user_id_556996_idx',
-            old_name='collection__user_id_768a39_idx',
+            model_name="wishlist",
+            new_name="collection__user_id_556996_idx",
+            old_name="collection__user_id_768a39_idx",
         ),
         migrations.RenameIndex(
-            model_name='wishlist',
-            new_name='collection__user_id_1b2ee8_idx',
-            old_name='collection__user_id_ff3480_idx',
+            model_name="wishlist",
+            new_name="collection__user_id_1b2ee8_idx",
+            old_name="collection__user_id_ff3480_idx",
         ),
     ]

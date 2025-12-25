@@ -1,9 +1,9 @@
 class HiddenFieldsMixin:
 
+    owner_path = None
 
-    owner_path = None  
     def _get_owner(self, obj):
-        
+
         if not self.owner_path:
             return None
 
@@ -27,7 +27,7 @@ class HiddenFieldsMixin:
         hidden = getattr(instance, "hidden_fields", None) or []
 
         for field in hidden:
-          
+
             if field == "extra":
                 if "extra" in data:
                     data["extra"] = None
@@ -40,7 +40,6 @@ class HiddenFieldsMixin:
                     extra.pop(key, None)
                 continue
 
- 
             if field in data:
                 data[field] = None
 

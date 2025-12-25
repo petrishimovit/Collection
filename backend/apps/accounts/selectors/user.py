@@ -1,5 +1,5 @@
-from django.db.models import Prefetch
 from django.contrib.auth import get_user_model
+from django.db.models import Prefetch
 
 User = get_user_model()
 
@@ -8,11 +8,7 @@ def user_list_qs():
     """
     Return a base queryset of active users with related profiles.
     """
-    return (
-        User.objects.filter(is_active=True)
-        .select_related("profile")
-        .prefetch_related()
-    )
+    return User.objects.filter(is_active=True).select_related("profile").prefetch_related()
 
 
 def user_by_pk(pk: int) -> User:

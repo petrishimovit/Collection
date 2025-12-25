@@ -1,14 +1,7 @@
 from typing import Optional
 
 from django.contrib.auth import get_user_model
-from django.db.models import (
-    Q,
-    Count,
-    QuerySet,
-    Sum,
-    DecimalField,
-    Value,
-)
+from django.db.models import Count, DecimalField, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 
 from apps.collection.models import Collection
@@ -23,22 +16,18 @@ def _base_collection_qs() -> QuerySet[Collection]:
       - total_current_value
       - total_purchase_price
     """
-    return (
-        Collection.objects
-        .select_related("owner")
-        .annotate(
-            items_count=Count("items"),
-            total_current_value=Coalesce(
-                Sum("items__current_value"),
-                Value(0),
-                output_field=DecimalField(max_digits=15, decimal_places=2),
-            ),
-            total_purchase_price=Coalesce(
-                Sum("items__purchase_price"),
-                Value(0),
-                output_field=DecimalField(max_digits=15, decimal_places=2),
-            ),
-        )
+    return Collection.objects.select_related("owner").annotate(
+        items_count=Count("items"),
+        total_current_value=Coalesce(
+            Sum("items__current_value"),
+            Value(0),
+            output_field=DecimalField(max_digits=15, decimal_places=2),
+        ),
+        total_purchase_price=Coalesce(
+            Sum("items__purchase_price"),
+            Value(0),
+            output_field=DecimalField(max_digits=15, decimal_places=2),
+        ),
     )
 
 

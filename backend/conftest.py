@@ -1,9 +1,9 @@
-import pytest
 import factory
+import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from apps.accounts.models import Follow 
+from apps.accounts.models import Follow
 
 User = get_user_model()
 
@@ -24,7 +24,7 @@ def user_factory():
 
 @pytest.fixture
 def user(db, user_factory):
-   
+
     return user_factory()
 
 

@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 
-from core.models import BaseModel  
+from core.models import BaseModel
 
 
 class Notification(BaseModel):
@@ -17,7 +17,6 @@ class Notification(BaseModel):
         COMMENT_LIKE = "comment_like"
         ITEM_CREATE = "item_create"
         COLLECTION_CREATE = "collection_create"
-        
 
     for_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -31,7 +30,6 @@ class Notification(BaseModel):
         choices=Type.choices,
         db_index=True,
     )
-
 
     is_checked = models.BooleanField(
         default=False,

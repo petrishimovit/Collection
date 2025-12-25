@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import Literal, Dict
 
-from django.db import transaction, models
+from typing import Dict, Literal
+
+from django.db import models, transaction
 from django.db.models import Count, F
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from apps.posts.models import Post, Comment, PostReaction
-
+from apps.posts.models import Comment, Post, PostReaction
 
 ReactionLiteral = Literal["like", "dislike"]
 
@@ -15,7 +15,7 @@ class PostService:
     """
     Service layer for post actions.
     """
-    
+
     @staticmethod
     def create_comment(*, post: Post, user, text: str) -> Comment:
         """
@@ -67,12 +67,7 @@ class PostService:
         if reaction_type not in (PostReaction.LIKE, PostReaction.DISLIKE):
             raise ValidationError({"type": "Must be 'like' or 'dislike'."})
 
-        reaction = (
-            PostReaction.objects
-            .select_for_update()
-            .filter(post=post, user=user)
-            .first()
-        )
+        reaction = PostReaction.objects.select_for_update().filter(post=post, user=user).first()
 
         if reaction is None:
             PostReaction.objects.create(
@@ -92,10 +87,7 @@ class PostService:
         counts_by_type = {
             row["type"]: row["c"]
             for row in (
-                PostReaction.objects
-                .filter(post=post)
-                .values("type")
-                .annotate(c=Count("id"))
+                PostReaction.objects.filter(post=post).values("type").annotate(c=Count("id"))
             )
         }
 
@@ -107,7 +99,7 @@ class PostService:
             "likes": likes,
             "dislikes": dislikes,
         }
-    
+
     @staticmethod
     def register_view_for_request(post, user, request) -> bool:
         """

@@ -1,10 +1,10 @@
-from rest_framework import mixins, viewsets, permissions
-from rest_framework.filters import OrderingFilter
 from drf_spectacular.utils import extend_schema
+from rest_framework import mixins, permissions, viewsets
+from rest_framework.filters import OrderingFilter
 
 from apps.posts.pagination import PostPagination
-from apps.posts.serializers import PostListSerializer
 from apps.posts.selectors.post import user_posts_qs
+from apps.posts.serializers import PostListSerializer
 
 
 class UserPostsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -18,7 +18,6 @@ class UserPostsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     filter_backends = (OrderingFilter,)
 
-   
     ordering_fields = (
         "created_at",
         "views_count",

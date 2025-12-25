@@ -1,5 +1,6 @@
 from django.db import models
-from django.db.models import Q, F
+from django.db.models import F, Q
+
 from core.models import BaseModel
 
 
@@ -26,12 +27,8 @@ class Follow(BaseModel):
         db_table = "accounts_follow"
 
         constraints = [
-            models.UniqueConstraint(
-                fields=["follower", "following"], name="uq_follow_unique"
-            ),
-            models.CheckConstraint(
-                check=~Q(follower=F("following")), name="chk_no_self_follow"
-            ),
+            models.UniqueConstraint(fields=["follower", "following"], name="uq_follow_unique"),
+            models.CheckConstraint(check=~Q(follower=F("following")), name="chk_no_self_follow"),
         ]
 
     def __str__(self):

@@ -6,13 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notifications', '0005_alter_notification_type'),
+        ("notifications", "0005_alter_notification_type"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='notification',
-            name='type',
-            field=models.CharField(choices=[('follow', 'Follow'), ('post', 'Post Create'), ('post_like', 'Post Like'), ('comment_create', 'Comment Create'), ('comment_like', 'Comment Like'), ('item_create', 'Item Create'), ('collection_create', 'Collection Create')], db_index=True, max_length=32),
+            model_name="notification",
+            name="type",
+            field=models.CharField(
+                choices=[
+                    ("follow", "Follow"),
+                    ("post", "Post Create"),
+                    ("post_like", "Post Like"),
+                    ("comment_create", "Comment Create"),
+                    ("comment_like", "Comment Like"),
+                    ("item_create", "Item Create"),
+                    ("collection_create", "Collection Create"),
+                ],
+                db_index=True,
+                max_length=32,
+            ),
         ),
     ]

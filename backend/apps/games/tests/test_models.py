@@ -4,6 +4,7 @@ from apps.games.models import PriceChartingConnect, normalize_url
 
 pytestmark = pytest.mark.django_db
 
+
 @pytest.mark.parametrize(
     "raw,expected",
     [

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('posts', '0003_post_views_count'),
+        ("posts", "0003_post_views_count"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='post',
-            name='is_deleted',
+            model_name="post",
+            name="is_deleted",
             field=models.BooleanField(default=False),
         ),
     ]

@@ -1,17 +1,11 @@
-from django.urls import path, include
-from . import views
+from django.urls import include, path
+from rest_framework.routers import SimpleRouter
 
+from .views import PingViewSet
 
-from rest_framework import routers
-router = routers.DefaultRouter()
-router.register('ping', views.PingViewSet, basename="ping")
+router = SimpleRouter()
+router.register(r"health", PingViewSet, basename="health")
 
 urlpatterns = [
-    path('api/', include(router.urls))
+    path("", include(router.urls)),
 ]
-
-"""
-- For the first view, you send the refresh token to get a new access token.
-- For the second view, you send the client credentials (username and password)
-  to get BOTH a new access and refresh token.
-"""

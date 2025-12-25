@@ -1,10 +1,12 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, BasePermission
+
 
 class IsAuthorOrReadOnly(BasePermission):
     """
     Allow read to everyone; write only to authenticated users.
     Object-level edit/delete is restricted to the author.
     """
+
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return True

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+
 class ReactionRequestSerializer(serializers.Serializer):
     """
     Serializer for submitting a reaction to a post or comment.

@@ -1,28 +1,18 @@
 from django.db import models
-from rest_framework import viewsets, permissions, status
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
-
-from drf_spectacular.utils import (
-    extend_schema,
-    extend_schema_view,
-    OpenApiParameter,
-)
-from drf_spectacular.types import OpenApiTypes
 
 from apps.collection.models import Item
-from apps.collection.serializers.item import ItemSerializer
-from apps.collection.permissions.item import IsItemOwnerOrReadOnly
-from apps.collection.selectors.item import (
-    get_items_for_user,
-    get_item_for_user,
-)
 from apps.collection.pagination import DefaultPageNumberPagination
-
+from apps.collection.permissions.item import IsItemOwnerOrReadOnly
+from apps.collection.selectors.item import get_item_for_user, get_items_for_user
+from apps.collection.serializers.item import ItemSerializer
 from apps.notifications.services import NotificationService
-
 
 
 @extend_schema_view(
@@ -186,7 +176,6 @@ class ItemViewSet(viewsets.ModelViewSet):
 
         NotificationService().create_item_for_followers(item=item)
 
-
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
 
@@ -246,10 +235,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         qs = get_items_for_user(request.user)
 
         if q:
-            qs = qs.filter(
-                models.Q(name__icontains=q)
-                | models.Q(description__icontains=q)
-            )
+            qs = qs.filter(models.Q(name__icontains=q) | models.Q(description__icontains=q))
 
         collection_id = request.query_params.get("collection")
         if collection_id:

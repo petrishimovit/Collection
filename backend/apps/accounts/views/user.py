@@ -1,22 +1,28 @@
 from typing import Any, Dict
-from django.http import Http404
-from django.contrib.auth import get_user_model
-from rest_framework import viewsets, permissions, decorators, response, status
-from rest_framework.request import Request
-from drf_spectacular.utils import (
-    extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiParameter
-)
 
-from apps.accounts.schemas import FollowActionOut, ProfileOut, ProfileUpdateIn
+from django.contrib.auth import get_user_model
+from django.http import Http404
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+)
+from rest_framework import decorators, permissions, response, status, viewsets
+from rest_framework.request import Request
+
 from apps.accounts.pagination import DefaultPagination
 from apps.accounts.permissions import IsSelfOrStaff
-from apps.accounts.selectors.user import user_list_qs, following_qs, followers_qs
-from apps.accounts.serializers.user import (
-    UserListSerializer, UserDetailSerializer, MeMinimalSerializer,
-)
+from apps.accounts.schemas import FollowActionOut, ProfileOut, ProfileUpdateIn
+from apps.accounts.selectors.user import followers_qs, following_qs, user_list_qs
 from apps.accounts.serializers.profile import ProfileBaseSerializer, ProfileWriteSerializer
+from apps.accounts.serializers.user import (
+    MeMinimalSerializer,
+    UserDetailSerializer,
+    UserListSerializer,
+)
 from apps.accounts.services.user import UserService
-
 from apps.notifications.services import NotificationService
 
 User = get_user_model()
@@ -39,6 +45,7 @@ User = get_user_model()
 )
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """Users ViewSet Followers Logic Include"""
+
     permission_classes = [permissions.AllowAny]
     pagination_class = DefaultPagination
 
@@ -83,7 +90,9 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
             return response.Response({"detail": "Bad request."}, status=400)
 
         followed_statuses = {"followed", "following", "created", "on"}
-        is_followed = getattr(res, "status", None) in followed_statuses or bool(getattr(res, "is_following", False))
+        is_followed = getattr(res, "status", None) in followed_statuses or bool(
+            getattr(res, "is_following", False)
+        )
 
         if is_followed:
             NotificationService().create_follow(target_user=target, follower_user=request.user)
@@ -154,9 +163,14 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         summary="List user's following",
         description="Retrieve paginated list of users the given user follows.",
         responses=UserListSerializer,
-        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True)]
+        parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True)],
     )
-    @decorators.action(detail=True, methods=["get"], url_path="following", permission_classes=[permissions.AllowAny])
+    @decorators.action(
+        detail=True,
+        methods=["get"],
+        url_path="following",
+        permission_classes=[permissions.AllowAny],
+    )
     def following(self, request: Request, pk: str | None = None):
         """Return list of users this user follows."""
         user = self.get_object()
@@ -170,7 +184,12 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         description="GET: Return minimal info about current user.\nDELETE: Deactivate current account.",
         responses={200: MeMinimalSerializer, 204: OpenApiResponse(description="Deactivated")},
     )
-    @decorators.action(detail=False, methods=["get", "delete"], url_path="me", permission_classes=[permissions.IsAuthenticated])
+    @decorators.action(
+        detail=False,
+        methods=["get", "delete"],
+        url_path="me",
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def me(self, request: Request):
         """Return current user's info or deactivate their account."""
         if request.method == "DELETE":
@@ -185,7 +204,12 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         description="Retrieve paginated list of users the authenticated user follows.",
         responses=UserListSerializer,
     )
-    @decorators.action(detail=False, methods=["get"], url_path="me/following", permission_classes=[permissions.IsAuthenticated])
+    @decorators.action(
+        detail=False,
+        methods=["get"],
+        url_path="me/following",
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def my_following(self, request: Request):
         """Return list of users the current user follows."""
         page = self.paginate_queryset(following_qs(request.user))
@@ -199,7 +223,12 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         responses=UserListSerializer,
         parameters=[OpenApiParameter(name="id", location=OpenApiParameter.PATH, required=True)],
     )
-    @decorators.action(detail=True, methods=["get"], url_path="followers", permission_classes=[permissions.AllowAny])
+    @decorators.action(
+        detail=True,
+        methods=["get"],
+        url_path="followers",
+        permission_classes=[permissions.AllowAny],
+    )
     def followers(self, request: Request, pk: str | None = None):
         """Return list of users following this user."""
         user = self.get_object()
@@ -213,7 +242,12 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         description="Retrieve paginated list of users who follow the authenticated user.",
         responses=UserListSerializer,
     )
-    @decorators.action(detail=False, methods=["get"], url_path="me/followers", permission_classes=[permissions.IsAuthenticated])
+    @decorators.action(
+        detail=False,
+        methods=["get"],
+        url_path="me/followers",
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def my_followers(self, request: Request):
         """Return list of users who follow the current user."""
         page = self.paginate_queryset(followers_qs(request.user))

@@ -49,7 +49,7 @@ class PriceChartingConnect(BaseModel):
             models.Index(fields=["url"]),
         ]
 
-    def __str__(self) -> str:  
+    def __str__(self) -> str:
         return self.url
 
     @property

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('collection', '0002_collection_is_active_item_is_active_and_more'),
+        ("collection", "0002_collection_is_active_item_is_active_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='item',
-            name='hidden_fields',
+            model_name="item",
+            name="hidden_fields",
             field=models.JSONField(blank=True, default=list),
         ),
     ]

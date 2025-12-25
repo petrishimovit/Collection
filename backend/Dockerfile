@@ -12,7 +12,7 @@ ENV PIP_NO_CACHE_DIR=1 \
 WORKDIR /app
 
 
-COPY /backend/requirements.txt /tmp/requirements.txt
+COPY /backend/ops/requirements/prod.txt /tmp/requirements.txt
 RUN pip install --upgrade pip \
  && pip install --no-cache-dir -r /tmp/requirements.txt
 

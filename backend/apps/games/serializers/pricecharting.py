@@ -12,6 +12,7 @@ class SearchQuerySerializer(serializers.Serializer):
     """
     query params for priceCharting search endpoint.
     """
+
     q = serializers.CharField(max_length=200)
     region = serializers.ChoiceField(
         choices=["all", "japan", "ntsc", "pal"],
@@ -30,6 +31,7 @@ class ItemQuerySerializer(serializers.Serializer):
     """
     query params for priceCharting item-details endpoint.
     """
+
     url = serializers.URLField(required=False)
     slug = serializers.CharField(required=False)
 

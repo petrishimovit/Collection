@@ -1,12 +1,14 @@
 """
-Django settings 
+Django settings
 """
-import os
-from pathlib import Path
-from datetime import timedelta
-from dotenv import load_dotenv
-import dj_database_url
 
+import os
+from datetime import timedelta
+from pathlib import Path
+from subprocess import DEVNULL
+
+import dj_database_url
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -19,6 +21,7 @@ ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
 
 DJANGO_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -35,6 +38,7 @@ THIRD_PARTY_APPS = [
     "django_celery_beat",
     "corsheaders",
     "django_filters",
+    "django_prometheus",
 ]
 
 LOCAL_APPS = [
@@ -43,7 +47,7 @@ LOCAL_APPS = [
     "apps.collection",
     "apps.posts",
     "apps.games",
-    "apps.notifications"
+    "apps.notifications",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -60,9 +64,7 @@ REST_FRAMEWORK = {
 }
 
 
-JWT_KEY = os.getenv(
-    "JWT_KEY", "b=72^ado*%1(v3r7rga9ch)03xr=d*f)lroz94kosf!61((9=i"
-)
+JWT_KEY = os.getenv("JWT_KEY", "b=72^ado*%1(v3r7rga9ch)03xr=d*f)lroz94kosf!61((9=i")
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
@@ -80,6 +82,7 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = "accounts.User"
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -88,7 +91,12 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
+
+if DEBUG:
+    MIDDLEWARE += ("whitenoise.middleware.WhiteNoiseMiddleware",)
+
 
 ROOT_URLCONF = "config.urls"
 
@@ -111,7 +119,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./db.sqlite3")
 
 
 DATABASES = {
@@ -120,8 +128,6 @@ DATABASES = {
         conn_max_age=60,
     )
 }
-
-
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -139,12 +145,41 @@ USE_L10N = True
 USE_TZ = True
 
 
-STATIC_URL = "/static/"
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+USE_S3 = os.getenv("USE_S3", "0") == "1"
+
+if USE_S3:
+    INSTALLED_APPS += ["storages"]
+
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+
+    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_REGION_NAME = "ru-central1"
+    AWS_S3_ENDPOINT_URL = "https://storage.yandexcloud.net"
+
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    AWS_S3_ADDRESSING_STYLE = "virtual"
+
+    AWS_S3_FILE_OVERWRITE = True
+    AWS_QUERYSTRING_AUTH = False
+    AWS_DEFAULT_ACL = None
+
+    AWS_S3_OBJECT_PARAMETERS = {
+        "CacheControl": "max-age=86400",
+    }
+
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+    MEDIA_URL = f"https://storage.yandexcloud.net/"
+
+
+else:
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
+
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True  
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ORIGIN_WHITELIST = []
 
 
@@ -152,7 +187,7 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Collectioner API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    'COMPONENT_SPLIT_REQUEST': True
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 
@@ -172,3 +207,54 @@ CELERY_TASK_DEFAULT_QUEUE = "celery"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+
+
+LOG_LEVEL = os.getenv("DJANGO_LOG_LEVEL", "INFO")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "apps": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+    },
+}
+
+
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "static"]

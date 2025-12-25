@@ -1,11 +1,10 @@
-
 """
 integration with pricecharting
 
 this package contains
 - low-level http client
-- simple schemas 
-- shared types 
+- simple schemas
+- shared types
 """
 
 from .client import PricechartingClient

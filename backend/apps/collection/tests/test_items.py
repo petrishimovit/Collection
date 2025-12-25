@@ -1,8 +1,8 @@
 import pytest
 from django.contrib.auth import get_user_model
 
-from apps.collection.models import Collection, Item
 from apps.accounts.models import Follow
+from apps.collection.models import Collection, Item
 
 pytestmark = pytest.mark.django_db
 
@@ -19,7 +19,7 @@ def create_user(email: str, display_name: str):
 
 
 def create_collection(owner, name="My collection", privacy=Collection.PRIVACY_PUBLIC, **kwargs):
-    
+
     defaults = {
         "description": "Test collection",
         "privacy": privacy,
@@ -29,8 +29,7 @@ def create_collection(owner, name="My collection", privacy=Collection.PRIVACY_PU
 
 
 def create_item(collection, name="My item", privacy=Item.PRIVACY_PUBLIC, **kwargs):
-    
-  
+
     defaults = {
         "description": "Test item",
         "privacy": privacy,
@@ -213,7 +212,7 @@ def test_item_search_filters_by_name(api_client, user):
 
 
 def test_item_hidden_fields_visible_for_owner(auth_client, user):
-   
+
     col = create_collection(user, "C1")
     item = create_item(col, "I1")
 
@@ -224,7 +223,6 @@ def test_item_hidden_fields_visible_for_owner(auth_client, user):
 
     data = response.data
 
-   
     assert "hidden_fields" in data
     assert set(data["hidden_fields"]) == {
         "purchase_price",
@@ -232,7 +230,6 @@ def test_item_hidden_fields_visible_for_owner(auth_client, user):
         "secret_tag",
     }
 
-  
     assert str(data["purchase_price"]) in ("100", "100.00")
     assert str(data["current_value"]) in ("150", "150.00")
 
@@ -242,7 +239,7 @@ def test_item_hidden_fields_visible_for_owner(auth_client, user):
 
 
 def test_item_hidden_fields_masked_for_anonymous(api_client, user):
-   
+
     col = create_collection(user, "C1")
     item = create_item(col, "I1")
 
@@ -252,21 +249,19 @@ def test_item_hidden_fields_masked_for_anonymous(api_client, user):
     assert response.status_code == 200
     data = response.data
 
- 
     assert "hidden_fields" not in data
-
 
     assert data.get("purchase_price") is None
     assert data.get("current_value") is None
 
     extra = data["extra"]
-    
+
     assert "visible_tag" in extra
     assert "secret_tag" in extra
 
 
 def test_item_hidden_fields_masked_for_non_owner(auth_client, user, api_client):
-    
+
     owner = user
     other = get_user_model().objects.create_user(
         email="other@example.com",
@@ -291,12 +286,12 @@ def test_item_hidden_fields_masked_for_non_owner(auth_client, user, api_client):
 
     extra = data["extra"]
     assert "visible_tag" in extra
-   
+
     assert "secret_tag" in extra
 
 
 def test_item_hidden_fields_can_be_cleared_with_patch(auth_client, user):
-   
+
     col = create_collection(user, "C1")
     item = create_item(col, "I1")
 
@@ -307,7 +302,6 @@ def test_item_hidden_fields_can_be_cleared_with_patch(auth_client, user):
     assert response.status_code == 200
     assert response.data["hidden_fields"] == []
 
-    
     from rest_framework.test import APIClient
 
     anon_client = APIClient()

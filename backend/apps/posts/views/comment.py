@@ -1,13 +1,12 @@
-from rest_framework import viewsets, permissions, decorators, response
-from rest_framework.exceptions import ValidationError
-from drf_spectacular.utils import extend_schema, extend_schema_view
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import decorators, permissions, response, viewsets
+from rest_framework.exceptions import ValidationError
 
+from apps.notifications.services import NotificationService
 from apps.posts.models import Comment, CommentReaction
 from apps.posts.serializers import ReactionRequestSerializer
 from apps.posts.services.comment import CommentService
-
-from apps.notifications.services import NotificationService
 
 
 @extend_schema_view(
@@ -25,9 +24,8 @@ from apps.notifications.services import NotificationService
                 },
             }
         },
-        tags=["Posts"]
+        tags=["Posts"],
     ),
-    
 )
 class CommentViewSet(viewsets.ViewSet):
     """Comment endpoints."""
@@ -39,7 +37,7 @@ class CommentViewSet(viewsets.ViewSet):
         detail=True,
         methods=["post"],
         permission_classes=[permissions.IsAuthenticated],
- )
+    )
     def react(self, request, pk=None):
         """Toggle reaction."""
         comment = get_object_or_404(self.queryset, pk=pk)

@@ -1,7 +1,9 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.db import models
+
 from core.models import BaseModel
+
 from ..managers import UserManager
 
 
@@ -46,17 +48,20 @@ class User(BaseModel, AbstractUser):
         if other.id == self.id:
             raise ValidationError("Cannot follow yourself.")
         from .follow import Follow
+
         obj, created = Follow.objects.get_or_create(follower=self, following=other)
         return created
 
     def unfollow(self, other: "User") -> int:
         """Unfollow another user. Returns number of deleted relations."""
         from .follow import Follow
+
         return Follow.objects.filter(follower=self, following=other).delete()[0]
 
     def is_following(self, other: "User") -> bool:
         """Check if the user follows another user."""
         from .follow import Follow
+
         return Follow.objects.filter(follower=self, following=other).exists()
 
     @property

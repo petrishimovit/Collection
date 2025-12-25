@@ -7,23 +7,35 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('games', '0002_pricechartingconnect_is_active_and_more'),
+        ("games", "0002_pricechartingconnect_is_active_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='pricechartingconnect',
-            name='current',
-            field=models.JSONField(blank=True, default=dict, encoder=django.core.serializers.json.DjangoJSONEncoder, help_text='Latest snapshot fetched from PriceCharting.'),
+            model_name="pricechartingconnect",
+            name="current",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                encoder=django.core.serializers.json.DjangoJSONEncoder,
+                help_text="Latest snapshot fetched from PriceCharting.",
+            ),
         ),
         migrations.AlterField(
-            model_name='pricechartingconnect',
-            name='history',
-            field=models.JSONField(blank=True, default=dict, encoder=django.core.serializers.json.DjangoJSONEncoder, help_text='Historical price snapshots keyed by date (YYYY-MM-DD).'),
+            model_name="pricechartingconnect",
+            name="history",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                encoder=django.core.serializers.json.DjangoJSONEncoder,
+                help_text="Historical price snapshots keyed by date (YYYY-MM-DD).",
+            ),
         ),
         migrations.AlterField(
-            model_name='pricechartingconnect',
-            name='last_synced_at',
-            field=models.DateTimeField(blank=True, help_text='When data was last synced from PriceCharting.', null=True),
+            model_name="pricechartingconnect",
+            name="last_synced_at",
+            field=models.DateTimeField(
+                blank=True, help_text="When data was last synced from PriceCharting.", null=True
+            ),
         ),
     ]

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('posts', '0002_remove_comment_body_remove_post_body_and_more'),
+        ("posts", "0002_remove_comment_body_remove_post_body_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='post',
-            name='views_count',
+            model_name="post",
+            name="views_count",
             field=models.PositiveIntegerField(db_index=True, default=0),
         ),
     ]

@@ -1,6 +1,6 @@
 # Django Server
 
-The backend works by using Django, Django Rest Framework, and DRF SimpleJWT. 
+The backend works by using Django, Django Rest Framework, and DRF SimpleJWT.
 
 For this demonstration, SimpleJWT utilizes the refresh and access token methodology. The client sends its credentials to the server once and receives an access and refresh token. Everytime you want to do authentication on a view, the client will send the access token; however, that access token expires (in our case, in 5 minutes for security reasons). Once it expires, instead of resending the credentials, we use the refresh token to get a new access token.
 

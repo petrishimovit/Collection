@@ -1,5 +1,7 @@
 from rest_framework import serializers
+
 from apps.posts.models import Comment
+
 from .author import AuthorMiniSerializer
 
 

@@ -1,6 +1,7 @@
-from django.urls import reverse
-from pathlib import Path
 import json
+from pathlib import Path
+
+from django.urls import reverse
 
 from apps.games.services.registry import GameRegistry
 from apps.games.services.search import GameSearchService
@@ -102,14 +103,13 @@ def test_games_search_returns_results(api_client):
     resp = api_client.get(url, {"q": "super mario", "limit": 10})
 
     assert resp.status_code == 200
-  
+
     assert isinstance(resp.data, list)
-   
+
     assert len(resp.data) >= 1
-   
+
     assert len(resp.data) <= 10
 
-   
     first = resp.data[0]
     assert "Game" in first
     assert "Platform" in first
@@ -120,12 +120,11 @@ def test_games_search_single_mode(api_client):
     resp = api_client.get(url, {"q": "super mario", "single": "1"})
 
     assert resp.status_code == 200
-   
+
     assert isinstance(resp.data, dict)
     assert "Game" in resp.data
 
-  
     game_name = (resp.data["Game"] or "").lower()
-    assert game_name  
-    
+    assert game_name
+
     assert "super" in game_name or "mario" in game_name

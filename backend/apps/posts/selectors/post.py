@@ -1,7 +1,7 @@
 from django.db import models
-from django.db.models import Count, Q, Max
+from django.db.models import Count, Max, Q
 
-from apps.posts.models import Post, Comment, PostReaction
+from apps.posts.models import Comment, Post, PostReaction
 from apps.posts.selectors.user import following_qs
 
 
@@ -10,8 +10,7 @@ def comments_qs(post: Post):
     Return queryset of comments for a given post with annotated reaction counts.
     """
     return (
-        Comment.objects
-        .filter(post=post)
+        Comment.objects.filter(post=post)
         .select_related("author")
         .annotate(
             _likes_count=Count(
@@ -33,8 +32,7 @@ def base_posts_qs():
     NOTE: soft-deleted posts are excluded globally.
     """
     return (
-        Post.objects
-        .filter(is_deleted=False) 
+        Post.objects.filter(is_deleted=False)
         .select_related("author")
         .annotate(
             _likes_count=Count(
@@ -112,17 +110,11 @@ def search_posts_qs(query: str):
     if not query:
         return base_posts_qs().none()
 
-    return (
-        base_posts_qs()
-        .filter(text__icontains=query)
-        .order_by("-created_at", "-id")
-    )
+    return base_posts_qs().filter(text__icontains=query).order_by("-created_at", "-id")
+
 
 def user_posts_qs(author_id):
     """
     Return posts authored by the given user id, ordered by creation date.
     """
-    return (
-        base_posts_qs()
-        .filter(author_id=author_id)
-    )
+    return base_posts_qs().filter(author_id=author_id)

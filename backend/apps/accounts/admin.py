@@ -1,11 +1,12 @@
 from django.contrib import admin, messages
 from django.utils.translation import ngettext
 
+from apps.accounts.services.user import UserService
 from core.admin import BaseAdmin
-from .models.user import User
+
 from .models.follow import Follow
 from .models.profile import Profile
-from apps.accounts.services.user import UserService
+from .models.user import User
 
 
 @admin.register(User)
@@ -32,7 +33,8 @@ class UserAdmin(BaseAdmin):
                     "%d user was soft deleted.",
                     "%d users were soft deleted.",
                     changed,
-                ) % changed,
+                )
+                % changed,
                 level=messages.WARNING,
             )
         else:
@@ -61,7 +63,8 @@ class UserAdmin(BaseAdmin):
                     "%d user was reactivated.",
                     "%d users were reactivated.",
                     changed,
-                ) % changed,
+                )
+                % changed,
                 level=messages.SUCCESS,
             )
         else:
@@ -79,6 +82,7 @@ class FollowAdmin(BaseAdmin):
     """
     Follow admin Register
     """
+
     pass
 
 
@@ -87,4 +91,5 @@ class ProfileAdmin(BaseAdmin):
     """
     Profile admin Register
     """
+
     pass

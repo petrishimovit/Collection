@@ -1,7 +1,7 @@
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
 
-from apps.collection.models import WishList, Item, Collection
+from apps.collection.models import Collection, Item, WishList
 
 
 class WishListSerializer(serializers.ModelSerializer):
@@ -39,26 +39,42 @@ class WishListSerializer(serializers.ModelSerializer):
         kind = attrs.get("kind") or getattr(self.instance, "kind", None)
 
         item = attrs.get("item") if "item" in attrs else getattr(self.instance, "item", None)
-        collection = attrs.get("collection") if "collection" in attrs else getattr(self.instance, "collection", None)
+        collection = (
+            attrs.get("collection")
+            if "collection" in attrs
+            else getattr(self.instance, "collection", None)
+        )
         title = attrs.get("title") if "title" in attrs else getattr(self.instance, "title", None)
 
         if kind == WishList.Kind.ITEM:
             if not item:
-                raise serializers.ValidationError({"item_id": "item_id is required when kind='item'."})
+                raise serializers.ValidationError(
+                    {"item_id": "item_id is required when kind='item'."}
+                )
             if collection is not None:
-                raise serializers.ValidationError({"collection_id": "collection_id must be null when kind='item'."})
+                raise serializers.ValidationError(
+                    {"collection_id": "collection_id must be null when kind='item'."}
+                )
 
         elif kind == WishList.Kind.COLLECTION:
             if not collection:
-                raise serializers.ValidationError({"collection_id": "collection_id is required when kind='collection'."})
+                raise serializers.ValidationError(
+                    {"collection_id": "collection_id is required when kind='collection'."}
+                )
             if item is not None:
-                raise serializers.ValidationError({"item_id": "item_id must be null when kind='collection'."})
+                raise serializers.ValidationError(
+                    {"item_id": "item_id must be null when kind='collection'."}
+                )
 
         elif kind == WishList.Kind.CUSTOM:
             if not title:
-                raise serializers.ValidationError({"title": "title is required when kind='custom'."})
+                raise serializers.ValidationError(
+                    {"title": "title is required when kind='custom'."}
+                )
             if item or collection:
-                raise serializers.ValidationError("item_id and collection_id must be null when kind='custom'.")
+                raise serializers.ValidationError(
+                    "item_id and collection_id must be null when kind='custom'."
+                )
 
         else:
             raise serializers.ValidationError({"kind": "Invalid kind value."})
@@ -68,11 +84,15 @@ class WishListSerializer(serializers.ModelSerializer):
             if kind == WishList.Kind.ITEM and item is not None:
                 item_owner_id = getattr(item.collection, "owner_id", None)
                 if item_owner_id == user.id:
-                    raise serializers.ValidationError({"item_id": "You cannot favorite your own item."})
+                    raise serializers.ValidationError(
+                        {"item_id": "You cannot favorite your own item."}
+                    )
 
             if kind == WishList.Kind.COLLECTION and collection is not None:
                 if collection.owner_id == user.id:
-                    raise serializers.ValidationError({"collection_id": "You cannot favorite your own collection."})
+                    raise serializers.ValidationError(
+                        {"collection_id": "You cannot favorite your own collection."}
+                    )
 
         return attrs
 

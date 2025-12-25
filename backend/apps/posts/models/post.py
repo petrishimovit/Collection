@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+
 from core.models import BaseModel
 
 
@@ -7,10 +8,13 @@ class Post(BaseModel):
     """
     User-created post with optional title and text body.
     """
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts")
+
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts"
+    )
     text = models.CharField(max_length=400, blank=True)
     views_count = models.PositiveIntegerField(default=0, db_index=True)
-    
+
     is_deleted = models.BooleanField(default=False)
 
     class Meta:

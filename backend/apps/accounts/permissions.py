@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
 class IsSelfOrStaff(BasePermission):
@@ -17,7 +17,7 @@ class IsSelfOrStaff(BasePermission):
 
         if not user.is_authenticated:
             return False
-        
+
         if user.is_superuser:
             return True
 
@@ -28,7 +28,6 @@ class IsSelfOrStaff(BasePermission):
         else:
             return False
 
-   
         if request.method in SAFE_METHODS:
             return user.id == target_user_id or user.is_staff
         return user.id == target_user_id or user.is_staff

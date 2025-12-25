@@ -28,7 +28,7 @@ class NotificationService:
             is_checked=True,
             updated_at=timezone.now(),
         )
-    
+
     @transaction.atomic
     def create_follow(self, *, target_user, follower_user) -> Notification:
         """Create a follow notification for target user."""
@@ -37,7 +37,7 @@ class NotificationService:
             type=Notification.Type.FOLLOW,
             info={"user_id": str(follower_user.pk)},
         )
-    
+
     @transaction.atomic
     def create_post_for_followers(self, *, author, post) -> int:
         """Create post notifications for all author followers."""
@@ -60,7 +60,7 @@ class NotificationService:
         ]
         Notification.all_objects.bulk_create(items, batch_size=1000)
         return len(items)
-    
+
     @transaction.atomic
     def create_post_reaction(self, *, post, actor, reaction_type: str) -> Notification | None:
         """Create a reaction notification for post author."""
@@ -77,7 +77,7 @@ class NotificationService:
                 "reaction_type": reaction_type,
             },
         )
-    
+
     @transaction.atomic
     def create_comment_like(self, *, comment, actor) -> Notification | None:
         """Create comment-like notification for comment author."""
@@ -96,7 +96,7 @@ class NotificationService:
                 "post_id": str(comment.post_id),
             },
         )
-    
+
     @transaction.atomic
     def create_collection_for_followers(self, *, owner, collection) -> int:
         """Notify all followers about new collection."""
@@ -108,9 +108,8 @@ class NotificationService:
         follower_ids = list(
             Follow.objects.filter(following=owner).values_list("follower_id", flat=True)
         )
-        if not follower_ids :
+        if not follower_ids:
             return 0
-        
 
         items = [
             Notification(
@@ -126,7 +125,7 @@ class NotificationService:
         ]
         Notification.all_objects.bulk_create(items, batch_size=1000)
         return len(items)
-    
+
     @transaction.atomic
     def create_item_for_followers(self, *, item) -> int:
         """Notify followers about new public item in public collection."""

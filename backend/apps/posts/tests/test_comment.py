@@ -2,9 +2,9 @@ import pytest
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts.models import User
-from apps.posts.models import Post, Comment, CommentReaction
-from apps.posts.services.post import PostService
+from apps.posts.models import Comment, CommentReaction, Post
 from apps.posts.services.comment import CommentService
+from apps.posts.services.post import PostService
 
 pytestmark = pytest.mark.django_db
 
