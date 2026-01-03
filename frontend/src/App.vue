@@ -1,60 +1,32 @@
-<template>
-  <div id="app">
-    <b-navbar toggleable="lg" type="dark" variant="info">
-      <router-link to="/" tag="b-navbar-brand">Vue JWT demo</router-link>
+<script lang="ts" setup>
+import NaiveProvider from './provider/NaiveProvider.vue'
 
-      <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
+import { dateZhCN, zhCN } from 'naive-ui'
 
-      <b-collapse id="nav-collapse" is-nav>
-        <b-navbar-nav>
-          <router-link v-if="!isLoggedIn" to="/login" tag="b-nav-item">Login</router-link>
-          <b-nav-item v-else v-on:click="handleLogout" tag="b-nav-item">Logout</b-nav-item>
-          <router-link to="/ping" tag="b-nav-item">Ping</router-link>
-        </b-navbar-nav>
-      </b-collapse>
-    </b-navbar>
-    <router-view/>
-  </div>
-</template>
+const { theme, themeOverrides } = useTheme()
 
-<script>
-import { mapActions, mapState } from 'vuex';
+defineOptions({
+  name: 'App'
+})
 
-export default {
-  name: 'App',
-  computed: {
-    ...mapState(['isLoggedIn']),
-  },
-  methods: {
-    handleLogout(event) {
-      event.preventDefault();
-      this.logout();
-      this.$router.push('/');
-    },
-    ...mapActions(['logout']),
-  },
-};
+const route = useRoute()
+
 </script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
+<template>
+  <NConfigProvider
+    class="h-full"
+    :locale="zhCN"
+    :date-locale="dateZhCN"
+    :theme="theme"
+    :theme-overrides="themeOverrides"
+  >
+    <NaiveProvider>
+      <RouterView />
+    </NaiveProvider>
+  </NConfigProvider>
+</template>
 
-#nav {
-  padding: 30px;
-}
-
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-  color: #42b983;
-}
+<style lang="scss">
+@use "@/styles/index.scss";
 </style>
